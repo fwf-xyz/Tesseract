@@ -1,22 +1,23 @@
 import asyncio
-from aiogram import Bot, Dispatcher, types
-from aiogram.filters import Command
-
+from aiogram import Bot, Dispatcher
+import logging
 from config import TOKEN
+from handlers import router as main_router
 
-bot = Bot(token=TOKEN)
-dp = Dispatcher()
 
-@dp.message(Command("start"))
-async def cmd_start(message: types.Message):
-    await message.answer("Привет! Я бот на aiogram 3.x")
+async def main() -> None:
+    bot = Bot(token=TOKEN)
+    dp = Dispatcher()
 
-@dp.message()
-async def echo_message(message: types.Message):
-    await message.answer(f"Вы написали: {message.text}")
+    await dp.include_router(main_router)
 
-async def main():
-    await dp.start_polling(bot)
+    async with aiosqlite.connect("db.sqlite3") as db:
+        await dp.start_polling(bot, db=db)
+
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    logging.basicConfig(level=logging.INFO)
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print('Бот выключен')
