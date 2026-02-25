@@ -1,8 +1,10 @@
 from aiogram import Router
-from . import start
+from . import start, menu, workout
 
 router = Router()
 
 router.include_routers(
-                        start.router
-                    )
+                        start.router,
+                        menu.router,
+                        workout.router
+)
