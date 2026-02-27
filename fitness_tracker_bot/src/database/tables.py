@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS workouts (
     user_id      INTEGER NOT NULL,
     workout_type TEXT NOT NULL,
     duration     INTEGER NOT NULL,
-    intensity    INTEGER NOT NULL,
+    intensity    TEXT NOT NULL,
     notes        TEXT,
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
