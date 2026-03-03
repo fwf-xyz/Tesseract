@@ -21,12 +21,12 @@ async def start_cmd(message: types.Message, db: sqlite3.Connection):
     db.commit()
 
     await message.answer(
-        f'👋 Добро пожаловать, {username}! \n \n Подпишись на мой <a href="http://t.me/cube_4d">тг-канал</a>!',
+        f'<b>👋 Добро пожаловать, {username}!</b> \n \n Подпишись на мой <a href="http://t.me/cube_4d">тг-канал</a>!',
         parse_mode='HTML',
         reply_markup=get_main_reply_keyboard()
     )
 
-    await send_main_menu(message)
+    await send_main_menu(message, db)
 
 
 

@@ -7,8 +7,6 @@ from handlers import router as main_router
 from database import get_connection, init_db
 from middlewares import DbSessionMiddleware
 
-from aiogram.exceptions import TelegramForbiddenError
-
 
 async def main():
     dp = Dispatcher()
@@ -18,12 +16,6 @@ async def main():
     bot = Bot(token=TOKEN)
     dp.update.middleware(DbSessionMiddleware(connector=db_conn))
     dp.include_router(main_router)
-
-    @dp.errors()
-    async def error_handler(update, exception):
-        if isinstance(exception, TelegramForbiddenError):
-            return True
-        raise exception
 
     try:
         await dp.start_polling(bot)

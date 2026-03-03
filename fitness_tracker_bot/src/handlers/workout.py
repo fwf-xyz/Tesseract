@@ -4,15 +4,52 @@ import sqlite3
 from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
 
+from database import paste_decoration_id
 from states import WorkoutForm
-from keyboards import get_workout_type_keyboard, get_intensity_keyboard
+from keyboards import get_workout_type_keyboard, get_intensity_keyboard, skip_note_keyboard
+
 
 router = Router()
 
 
+async def save_workout_data(note: str | None, user_id: int, message: types.Message, state: FSMContext, db: sqlite3.Connection) -> None:
+    data = await state.get_data()
+    
+    workout_type = data.get('type', 'Unknown')
+    duration = data.get('duration', 0)
+    intensity = data.get('intensity', 'Normal')
+    
+    created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    cursor = db.cursor()
+    cursor.execute(
+        """INSERT INTO workouts (user_id, workout_type, duration, intensity, notes, created_at) 
+        VALUES (?, ?, ?, ?, ?, ?)""",
+        (user_id, workout_type, duration, intensity, note, created_at)
+    )
+
+    db.commit()
+    await state.clear()
+    
+    photo_id = paste_decoration_id('workout_saved', db)
+    caption = (
+        f'✅ *ТРЕНИРОВКА СОХРАНЕНА*!\n\n'
+        f'🏹 *Тип:* {workout_type}\n'
+        f'⌛ *Длительность:* {duration} мин\n'
+        f'⚡️ *Интенсивность:* {intensity}\n\n'
+        f'*Заметка:* {note or "—"}\n\n'
+        f'📅 {created_at}'
+    )
+
+    await message.answer_photo(
+        photo=photo_id,
+        caption=caption,
+        parse_mode="Markdown"
+    )
+
+
 @router.callback_query(F.data == 'add_workout')
 async def add_workout(callback: types.CallbackQuery, state: FSMContext):
-
     sent = await callback.message.answer(
         'Выбери тип тренировки:',
         reply_markup=get_workout_type_keyboard()
@@ -73,35 +110,18 @@ async def choose_intensity(callback: types.CallbackQuery, state: FSMContext):
     await state.update_data(intensity=intensity)
 
     await callback.message.answer(
-        'Добавь заметку к тренировке\nИли отправь /skip чтобы пропустить'
+        'Добавь заметку к тренировке (необязательно):',
+        reply_markup=skip_note_keyboard()
     )
     await state.set_state(WorkoutForm.note)
     await callback.answer()
 
 
-@router.message(WorkoutForm.note)
-async def add_note(message: types.Message, state: FSMContext, db: sqlite3.Connection):
-    note = None if message.text == '/skip' else message.text
-    data = await state.get_data()
+@router.message(WorkoutForm.note, F.text)
+async def handle_note_input(message: types.Message, state: FSMContext, db: sqlite3.Connection):
+    await save_workout_data(message.text, message.from_user.id, message, state, db)
 
-    user_id = message.from_user.id
-    created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-    cursor = db.cursor()
-    cursor.execute(
-        """INSERT INTO workouts (user_id, workout_type, duration, intensity, notes, created_at) VALUES (?, ?, ?, ?, ?, ?)""",
-        (user_id, data['type'], data['duration'], data['intensity'], note, created_at)
-    )
-    db.commit()
-    await state.clear()
-
-
-    await message.answer(
-        f'✅ ТРЕНИРОВКА СОХРАНЕНА!\n\n'
-        f'👤 ID: {user_id}\n'
-        f'🏋️ Тип: {data["type"]}\n'
-        f'⏱ Длительность: {data["duration"]} мин\n'
-        f'⚡️ Интенсивность: {data["intensity"]}\n'
-        f'📝 Заметка: {note or "—"}\n'
-        f'🕐 Время: {created_at}'
-    )
+@router.callback_query(WorkoutForm.note, F.data == 'skip_note')
+async def handle_skip_note(callback: types.CallbackQuery, state: FSMContext, db: sqlite3.Connection):
+    await save_workout_data(None, callback.from_user.id, callback.message, state, db)
+    await callback.answer()

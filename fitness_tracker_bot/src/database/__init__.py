@@ -1,1 +1,1 @@
-from .db import get_connection, init_db
+from .db import get_connection, init_db, paste_decoration_id
