@@ -2,9 +2,7 @@ from aiogram import Router
 from aiogram.types import ErrorEvent
 from aiogram.exceptions import TelegramForbiddenError
 
-
 router = Router()
-
 
 @router.errors()
 async def error_handler(event: ErrorEvent):

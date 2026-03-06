@@ -1,19 +1,19 @@
 from aiogram import types, Router, F
 from config import ADMIN_ID
-import sqlite3
+
+from database import Repository
 
 
 admin = ADMIN_ID
-
 router = Router()
 
 
 @router.message(F.photo or F.animation)
-async def get_design_id(message: types.Message, db: sqlite3.Connection):
+async def get_design_id(message: types.Message, repo: Repository):
     if message.from_user.id != ADMIN_ID:
         return
 
-    cursor = db.cursor()
+    cursor = repo.conn.cursor()
 
     file_id = message.photo[-1].file_id
     user_id = message.from_user.id
@@ -31,7 +31,7 @@ async def get_design_id(message: types.Message, db: sqlite3.Connection):
         (user_id, file_id, content, created_at)
     )
 
-    db.commit()
+    repo.conn.commit()
     await message.answer("✅ Данные успешно обновлены в базе!")
 
 

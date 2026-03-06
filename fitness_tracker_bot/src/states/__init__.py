@@ -1,1 +1,1 @@
-from .workout_states import WorkoutForm
+from .workout_states import WorkoutForm, WorkoutHistoryForm

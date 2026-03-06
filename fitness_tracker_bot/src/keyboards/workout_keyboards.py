@@ -7,8 +7,10 @@ def get_workout_type_keyboard():
 
     builder.add(InlineKeyboardButton(text='🫀 Кардио',
     callback_data='type_cardio'))
-    builder.add(InlineKeyboardButton(text='💪 Силовая', callback_data='type_strength'))
-    builder.add(InlineKeyboardButton(text='🧘 Растяжка', callback_data='type_stretch'))
+    builder.add(InlineKeyboardButton(text='💪 Силовая',
+    callback_data='type_strength'))
+    builder.add(InlineKeyboardButton(text='🧘 Растяжка',
+    callback_data='type_stretch'))
 
     return builder.as_markup()
 

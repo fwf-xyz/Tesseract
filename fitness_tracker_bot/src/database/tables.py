@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS users (
 );
 """
 
-
 CREATE_WORKOUTS_TABLE = """
 CREATE TABLE IF NOT EXISTS workouts (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,7 +18,6 @@ CREATE TABLE IF NOT EXISTS workouts (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 """
-
 
 CREATE_GOALS_TABLE = """
 CREATE TABLE IF NOT EXISTS goals (
@@ -34,7 +32,6 @@ CREATE TABLE IF NOT EXISTS goals (
 );
 """
 
-
 CREATE_FRIENDS_TABLE = """
 CREATE TABLE IF NOT EXISTS friends (
     user_id    INTEGER NOT NULL,
@@ -45,7 +42,6 @@ CREATE TABLE IF NOT EXISTS friends (
     FOREIGN KEY (friend_id) REFERENCES users(user_id)
 );
 """
-
 
 CREATE_ACHIEVEMENTS_TABLE = """
 CREATE TABLE IF NOT EXISTS achievements (

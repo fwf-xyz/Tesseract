@@ -5,21 +5,22 @@ from config import TOKEN
 from handlers import router as main_router
 
 from database import get_connection, init_db
-from middlewares import DbSessionMiddleware
+from middlewares import RepoMiddleware
 
 
 async def main():
     dp = Dispatcher()
-    init_db() 
     db_conn = get_connection()
+    init_db() 
 
     bot = Bot(token=TOKEN)
-    dp.update.middleware(DbSessionMiddleware(connector=db_conn))
+    dp.update.middleware(RepoMiddleware(conn=db_conn))
     dp.include_router(main_router)
 
     try:
         await dp.start_polling(bot)
     finally:
+        await bot.session.close()
         db_conn.close()
 
 
