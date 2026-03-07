@@ -7,6 +7,7 @@ from states import WorkoutForm
 from keyboards import get_workout_type_keyboard, get_intensity_keyboard, skip_note_keyboard
 
 from database import Repository
+from utils import WORKOUT_TYPES, INTENSITY_LEVELS, MONTHS
 
 
 router = Router()
@@ -16,15 +17,23 @@ async def save_workout_data(note: str | None, user_id: int, message: types.Messa
                             state: FSMContext, repo: Repository) -> None:
     data = await state.get_data()
     
-    workout_type = data.get('type', 'Unknown')
+    workout_type = WORKOUT_TYPES.get(data.get('type', 'Unknown'), data.get('type', 'Unknown'))
     duration = data.get('duration', 0)
-    intensity = data.get('intensity', 'Normal')
-    created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    
-    repo.workouts.save_workout(user_id, workout_type, duration, intensity, note, created_at)
+    intensity = INTENSITY_LEVELS.get(data.get('intensity', 'Normal'), data.get('intensity', 'Normal'))
+
+    dt = datetime.now()
+    date_str = "{} {} {:02d}:{:02d}".format(
+        dt.day, 
+        MONTHS.get(dt.month), 
+        dt.hour, 
+        dt.minute
+    )
+
+    repo.workouts.save_workout(user_id, workout_type, duration, intensity, note, date_str)
 
     await state.clear()
     
+
     photo_id = repo.users.paste_decoration_id('workout_saved')
     caption = (
         f'✅ <b>ТРЕНИРОВКА СОХРАНЕНА!</b>\n\n'
@@ -32,7 +41,7 @@ async def save_workout_data(note: str | None, user_id: int, message: types.Messa
         f'⌛ <b>Длительность:</b> {duration} мин\n'
         f'⚡️ <b>Интенсивность:</b> {intensity}\n\n'
         f'<b>Заметка:</b> {note or "—"}\n\n'
-        f'📅 {created_at}'
+        f'📅 <b>Дата:</b> {date_str}'
     )
 
     await message.answer_photo(

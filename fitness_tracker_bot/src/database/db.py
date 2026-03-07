@@ -1,7 +1,8 @@
 import sqlite3
 from .tables import ALL_TABLES 
+from config import db_path
 
-DB_PATH = "fitness.db"
+DB_PATH = db_path
 
 def get_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)

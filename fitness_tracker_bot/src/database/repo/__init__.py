@@ -4,5 +4,6 @@ from .user_repository import UserRepository
 
 class Repository:
     def __init__(self, conn):
+        self.conn = conn
         self.users = UserRepository(conn)
         self.workouts = WorkoutRepository(conn)

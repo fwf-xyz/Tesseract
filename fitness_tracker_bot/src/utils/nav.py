@@ -7,7 +7,7 @@ async def send_main_menu(message: Message, repo: Repository):
     await message.delete()
     await message.answer('💬: Меню')
 
-    photo_id = repo.paste_decoration_id('menu')
+    photo_id = repo.users.paste_decoration_id('menu')
     caption = '<b>🎯Цель недели:</b> \n \n ⭐<b>Средн. Интенсивность:</b>'
     await message.answer_photo(
         photo=photo_id,

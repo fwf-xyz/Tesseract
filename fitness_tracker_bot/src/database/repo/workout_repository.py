@@ -1,22 +1,22 @@
 import sqlite3
 
 class WorkoutRepository:
-    def __init__(self, db: sqlite3.Connection):
-        self.db = db
-        self.db.row_factory = sqlite3.Row
+    def __init__(self, conn: sqlite3.Connection):
+        self.conn = conn
+        self.conn.row_factory = sqlite3.Row
 
     def save_workout(self, user_id: int, workout_type: str, duration: int, 
                     intensity: str, note: str | None, created_at: str):
-        cursor = self.db.cursor()
+        cursor = self.conn.cursor()
         cursor.execute(
             """INSERT INTO workouts (user_id, workout_type, duration, intensity, notes, created_at) 
             VALUES (?, ?, ?, ?, ?, ?)""",
             (user_id, workout_type, duration, intensity, note, created_at)
         )
-        self.db.commit()
+        self.conn.commit()
 
     def get_history(self, user_id: int, limit: int):
-        cursor = self.db.cursor()
+        cursor = self.conn.cursor()
         cursor.execute(
             """SELECT created_at, workout_type, duration, intensity
             FROM workouts 
