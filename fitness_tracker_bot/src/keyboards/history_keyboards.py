@@ -1,21 +1,13 @@
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+def history_keyboard(current_page: int = 0, total_pages: int = 1) -> InlineKeyboardMarkup:
+    buttons = []
+
+    if current_page > 0:
+        buttons.append(InlineKeyboardButton(text='◀️ Назад', callback_data='page_history:prev'))
+
+    if current_page < total_pages - 1:
+        buttons.append(InlineKeyboardButton(text='Вперёд ▶️', callback_data='page_history:next'))
 
 
-def history_keyboard():
-    builder = InlineKeyboardBuilder()
-
-    builder.add(InlineKeyboardButton(text="⬅️",
-                                    callback_data="back_slide_history"
-                                    ))
-    builder.add(InlineKeyboardButton(text="➡️",
-                                    callback_data="next_slide_history"
-                                    ))
-
-
-    builder.add(InlineKeyboardButton(text="✏️ Редактировать",
-                                    callback_data="edit_history"
-                                    ))
-
-    builder.adjust(2, 1)
-    return builder.as_markup()
+    return InlineKeyboardMarkup(inline_keyboard=[buttons])

@@ -8,3 +8,4 @@ class WorkoutForm(StatesGroup):
 
 class WorkoutHistoryForm(StatesGroup):
     history = State()
+    viewing = State()
