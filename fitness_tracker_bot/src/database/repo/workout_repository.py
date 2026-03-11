@@ -8,24 +8,23 @@ class WorkoutRepository:
 
 
     def save_workout(self, user_id: int, workout_type: str, duration: int, 
-                    intensity: str, note: str | None, created_at: str):
-        cursor = self.conn.cursor()
-        cursor.execute(
-            """INSERT INTO workouts (user_id, workout_type, duration, intensity, notes, created_at) 
-            VALUES (?, ?, ?, ?, ?, ?)""",
-            (user_id, workout_type, duration, intensity, note, created_at)
-        )
-        self.conn.commit()
+                    intensity: str, note: str | None, created_at: str) -> None:
+        with self.conn:
+            self.conn.execute(
+                """INSERT INTO workouts (user_id, workout_type, duration, intensity, notes, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?)""",
+                (user_id, workout_type, duration, intensity, note, created_at)
+            )
 
 
-    def get_history(self, user_id: int, start_limit: int):
-        cursor = self.conn.cursor()
+    def get_history(self, user_id: int, days_back: int) -> list[sqlite3.Row]:
+        since = date.today() - timedelta(days=days_back)
 
-        query = """SELECT created_at, workout_type, duration, intensity
+        return self.conn.execute(
+            """SELECT created_at, workout_type, duration, intensity
             FROM workouts 
-            WHERE user_id = ?  and created_at >= ?
+            WHERE user_id = ? AND created_at >= ?
             ORDER BY created_at DESC
-            """
-        start_date = date.today() - timedelta(days=start_limit)
-        cursor.execute(query, (user_id, start_date))
-        return cursor.fetchall()
+            """,
+            (user_id, since)
+        ).fetchall()

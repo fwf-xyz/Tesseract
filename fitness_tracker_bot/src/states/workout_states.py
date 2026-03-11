@@ -5,6 +5,7 @@ class WorkoutForm(StatesGroup):
     duration = State()
     intensity = State()
     note = State()
+    verify = State()
 
 class WorkoutHistoryForm(StatesGroup):
     history = State()

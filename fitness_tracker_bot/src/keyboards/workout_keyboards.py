@@ -23,3 +23,12 @@ def get_intensity_keyboard():
     builder.add(InlineKeyboardButton(text='🔴 Высокая', callback_data='intensity_high'))
 
     return builder.as_markup()
+
+
+def verify_workout_keyboard():
+    builder = InlineKeyboardBuilder()
+
+    builder.add(InlineKeyboardButton(text='✅ Подтвердить', callback_data='confirm_workout'))
+    builder.add(InlineKeyboardButton(text='❌ Отменить', callback_data='cancel_workout'))
+
+    return builder.as_markup()
