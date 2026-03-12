@@ -31,7 +31,7 @@ async def get_design_id(message: types.Message, repo: Repository):
     )
 
     repo.conn.commit()
-    await message.answer("✅ Данные успешно обновлены в базе данных!")
+    await message.answer("✅ Изображение по параметру успешно установлено!")
 
 
 

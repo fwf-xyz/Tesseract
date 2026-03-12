@@ -12,6 +12,7 @@ def get_workout_type_keyboard():
     builder.add(InlineKeyboardButton(text='🧘 Растяжка',
     callback_data='type_stretch'))
 
+    builder.adjust(1, 1, 1)
     return builder.as_markup()
 
 

@@ -10,3 +10,5 @@ class WorkoutForm(StatesGroup):
 class WorkoutHistoryForm(StatesGroup):
     history = State()
     viewing = State()
+    selecting_page = State()
+    selecting_edit = State()

@@ -1,13 +1,24 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 def history_keyboard(current_page: int = 0, total_pages: int = 1) -> InlineKeyboardMarkup:
-    buttons = []
+    builder = InlineKeyboardBuilder()
+    nav_count = 0
 
     if current_page > 0:
-        buttons.append(InlineKeyboardButton(text='◀️ Назад', callback_data='page_history:prev'))
-
+        builder.button(text='◀ Назад', callback_data='page_history:prev')
+        nav_count += 1
     if current_page < total_pages - 1:
-        buttons.append(InlineKeyboardButton(text='Вперёд ▶️', callback_data='page_history:next'))
+        builder.button(text='Вперёд ▶', callback_data='page_history:next')
+        nav_count += 1
 
+    builder.button(text='⚡️ Быстрый выбор страницы', callback_data='select_page_history')
+    builder.button(text='✏️ Редактировать', callback_data='edit_history')
+    builder.button(text='× Закрыть', callback_data='close_history')
 
-    return InlineKeyboardMarkup(inline_keyboard=[buttons])
+    if nav_count:
+        builder.adjust(nav_count, 1, 1, 1)
+    else:
+        builder.adjust(1, 1, 1)
+
+    return builder.as_markup()

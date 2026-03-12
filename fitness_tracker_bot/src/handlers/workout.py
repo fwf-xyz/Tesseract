@@ -4,10 +4,11 @@ from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
 
 from states import WorkoutForm
-from keyboards import get_workout_type_keyboard, get_intensity_keyboard, skip_note_keyboard, verify_workout_keyboard
+from keyboards import get_workout_type_keyboard, skip_note_keyboard, verify_workout_keyboard
 
 from database import Repository
-from utils import WORKOUT_TYPES, INTENSITY_LEVELS, MONTHS
+from utils import WORKOUT_TYPES, MONTHS, safe_delete_message
+from config import MAX_INTENSITY_LEVEL
 
 
 router = Router()
@@ -19,7 +20,7 @@ async def confirm_workout_data(message: types.Message, state: FSMContext,
 
     workout_type = WORKOUT_TYPES.get(data.get('type', 'Unknown'), data.get('type', 'Unknown'))
     duration = data.get('duration', 0)
-    intensity = INTENSITY_LEVELS.get(data.get('intensity', 'Normal'), data.get('intensity', 'Normal'))
+    intensity = data.get('intensity', None)
 
     dt = datetime.now()
     date_str = "{} {} {:02d}:{:02d}".format(
@@ -34,7 +35,7 @@ async def confirm_workout_data(message: types.Message, state: FSMContext,
         f'<b>Подтверждение Тренировки:</b>\n\n'
         f'🏹 <b>Тип:</b> {workout_type}\n'
         f'⌛ <b>Длительность:</b> {duration} мин\n'
-        f'⚡️ <b>Интенсивность:</b> {intensity}\n\n'
+        f'⚡️ <b>Интенсивность:</b> {intensity}/{MAX_INTENSITY_LEVEL}\n\n'
         f'<b>Заметка:</b> {note or "—"}\n\n'
         f'📅 <b>Дата:</b> {date_str}'
     )
@@ -46,15 +47,15 @@ async def confirm_workout_data(message: types.Message, state: FSMContext,
         parse_mode='HTML'
     )
 
-
     await state.update_data(note=note, type_message_id=sent.message_id)
 
 
 @router.callback_query(F.data == 'add_workout')
 async def add_workout(callback: types.CallbackQuery, state: FSMContext):
     sent = await callback.message.answer(
-        'Выбери тип тренировки:',
-        reply_markup=get_workout_type_keyboard()
+        '<b>Выбери тип тренировки:</b>',
+        reply_markup=get_workout_type_keyboard(),
+        parse_mode='HTML'
     )
 
     await state.set_state(WorkoutForm.type)
@@ -66,18 +67,16 @@ async def add_workout(callback: types.CallbackQuery, state: FSMContext):
 async def choose_type(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
 
-    await callback.bot.delete_message(
-        chat_id=callback.message.chat.id,
-        message_id=data['type_message_id']
-    )
+    await safe_delete_message(callback.bot, callback.message.chat.id, data['type_message_id'])
 
     workout_type = callback.data.replace('type_', '')
     await state.update_data(type=workout_type)
 
     sent = await callback.message.answer(
-        '⌛ Укажи длительность тренировки в минутах:'
+        '⌛<b>Укажи длительность тренировки в минутах:</b>',
+        parse_mode='HTML'
     )
-    # должно быть ограничение от 1 до 245 минут, но это можно будет добавить позже
+
     await state.set_state(WorkoutForm.duration)
     await state.update_data(type_message_id=sent.message_id)
     await callback.answer()
@@ -87,13 +86,10 @@ async def choose_type(callback: types.CallbackQuery, state: FSMContext):
 async def choose_duration(message: types.Message, state: FSMContext):
     data = await state.get_data()
 
-    await message.bot.delete_message(
-        chat_id=message.chat.id,
-        message_id=data['type_message_id']
-    )
+    await safe_delete_message(message.bot, message.chat.id, data['type_message_id'])
     await message.delete()
 
-    if not message.text.isdigit():
+    if not message.text.isdigit() or not (1 <= int(message.text) <= 245):
         sent = await message.answer('Введи число от 1 до 245 минут: ')
         await state.update_data(type_message_id=sent.message_id)
         return
@@ -101,43 +97,55 @@ async def choose_duration(message: types.Message, state: FSMContext):
     await state.update_data(duration=int(message.text))
 
     sent = await message.answer(
-        'Выбери интенсивность:',
-        reply_markup=get_intensity_keyboard()
+        '<b>⚡️Укажи интенсивность тренировки от 1 до 5:</b>',
+        parse_mode='HTML'
     )
 
     await state.set_state(WorkoutForm.intensity)
     await state.update_data(type_message_id=sent.message_id)
 
 
-@router.callback_query(WorkoutForm.intensity, F.data.startswith('intensity_'))
-async def choose_intensity(callback: types.CallbackQuery, state: FSMContext):
-    intensity = callback.data.replace('intensity_', '')
-
-    await state.update_data(intensity=intensity)
+@router.message(WorkoutForm.intensity)
+async def choose_intensity(message: types.Message, state: FSMContext):
     data = await state.get_data()
 
-    await callback.bot.delete_message(
-        chat_id=callback.message.chat.id,
-        message_id=data['type_message_id']
+    await safe_delete_message(message.bot, message.chat.id, data['type_message_id'])
+    await message.delete()
+
+    if not message.text.isdigit() or not (1 <= int(message.text) <= 5):
+        sent = await message.answer('Введи число от 1 до 5: ')
+        await state.update_data(type_message_id=sent.message_id)
+        return
+
+    await state.update_data(intensity=int(message.text))
+
+    sent = await message.answer(
+        '📝<b>Добавь заметку к тренировке:</b>',
+        reply_markup=skip_note_keyboard(),
+        parse_mode='HTML'
     )
 
-    sent = await callback.message.answer(
-        '📝 Добавь заметку к тренировке:',
-        reply_markup=skip_note_keyboard()
-    )
-    await state.update_data(type_message_id=sent.message_id)
     await state.set_state(WorkoutForm.note)
-    await callback.answer()
+    await state.update_data(type_message_id=sent.message_id)
 
 
 @router.message(WorkoutForm.note, F.text)
 async def handle_note_input(message: types.Message, state: FSMContext, repo: Repository):
+    data = await state.get_data()
+
+    await safe_delete_message(message.bot, message.chat.id, data['type_message_id'])
+    await message.delete()
+
     await confirm_workout_data(message, state, message.text, repo)
     await state.set_state(WorkoutForm.verify)
 
 
 @router.callback_query(WorkoutForm.note, F.data == 'skip_note')
 async def handle_skip_note(callback: types.CallbackQuery, state: FSMContext, repo: Repository):
+    data = await state.get_data()
+
+    await safe_delete_message(callback.bot, callback.message.chat.id, data['type_message_id'])
+
     await confirm_workout_data(callback.message, state, None, repo)
     await state.set_state(WorkoutForm.verify)
     await callback.answer()
@@ -147,6 +155,8 @@ async def handle_skip_note(callback: types.CallbackQuery, state: FSMContext, rep
 async def confirm_workout(callback: types.CallbackQuery, state: FSMContext, repo: Repository) -> None:
     data = await state.get_data()
 
+    await safe_delete_message(callback.bot, callback.message.chat.id, data['type_message_id'])
+
     workout_type = data.get('type', 'Unknown')
     duration = data.get('duration', 0)
     intensity = data.get('intensity', 'Normal')
@@ -155,18 +165,15 @@ async def confirm_workout(callback: types.CallbackQuery, state: FSMContext, repo
 
     repo.workouts.save_workout(callback.from_user.id, workout_type, duration, intensity, note, date_str)
     await state.clear()
-    await callback.answer('✅ Тренировка сохранена!')
+    await callback.answer('✅ Запись тренировки сохранена!')
 
 
 @router.callback_query(WorkoutForm.verify, F.data == 'cancel_workout')
 async def cancel_workout(callback: types.CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()
 
-    await callback.bot.delete_message(
-        chat_id=callback.message.chat.id,
-        message_id=data['type_message_id']
-    )
+    await safe_delete_message(callback.bot, callback.message.chat.id, data['type_message_id'])
 
     await state.clear()
-    await callback.message.answer('❌ Запись отменена.')
+    await callback.message.answer('❌ Запись тренировки отменена')
     await callback.answer()
