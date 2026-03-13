@@ -21,7 +21,7 @@ class WorkoutRepository:
         since = date.today() - timedelta(days=days_back)
 
         return self.conn.execute(
-            """SELECT created_at, workout_type, duration, intensity
+            """SELECT created_at, workout_type, duration, intensity, notes
             FROM workouts 
             WHERE user_id = ? AND created_at >= ?
             ORDER BY created_at DESC

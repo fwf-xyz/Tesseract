@@ -5,13 +5,35 @@ from aiogram.fsm.context import FSMContext
 
 from database import Repository
 from states import WorkoutHistoryForm
-from keyboards import history_keyboard
+from keyboards import history_keyboard, edit_history_entry_keyboard
 from utils import WORKOUT_TYPES, MONTHS, safe_delete_message
+
+from config import MAX_INTENSITY_LEVEL
 
 
 router = Router()
 
 ITEMS_PER_PAGE = 5 
+
+async def send_history_message(bot, chat_id: int, state: FSMContext, repo: Repository):
+    data = await state.get_data()
+    history = data['history']
+    days = data['days']
+    current_page = data.get('current_page', 0)
+    total_pages = (len(history) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
+
+    caption = build_caption(history, page=current_page, days=days)
+    photo_id = repo.users.paste_decoration_id('history')
+
+    sent = await bot.send_photo(
+        chat_id=chat_id,
+        photo=photo_id,
+        caption=caption,
+        reply_markup=history_keyboard(current_page=current_page, total_pages=total_pages),
+        parse_mode='HTML',
+    )
+
+    await state.update_data(type_message_id=sent.message_id)
 
 
 @router.callback_query(F.data.startswith('close_'))
@@ -42,7 +64,7 @@ def build_caption(history: list, page: int, days: int) -> str:
             number,
             WORKOUT_TYPES.get(workout['workout_type'], workout['workout_type']),
             str(workout['duration']),
-            workout['intensity'],
+            f'⚡️{workout['intensity']}/{MAX_INTENSITY_LEVEL}',
             date_str,
         )
     caption += '------------\n'
@@ -72,11 +94,11 @@ async def ask_history_period(callback: types.CallbackQuery, state: FSMContext):
 async def handle_history_input(message: types.Message, state: FSMContext, repo: Repository):
     data = await state.get_data()
 
-    await safe_delete_message(message.bot, message.chat.id, data['type_message_id'])
     await message.delete()
+    await safe_delete_message(message.bot, message.chat.id, data['type_message_id'])
 
     if not message.text.isdigit():
-        await message.answer('Введи число от 1 до 365 дней:')
+        await message.answer('Введи натуральное число:')
         return
 
     days = int(message.text)
@@ -87,21 +109,10 @@ async def handle_history_input(message: types.Message, state: FSMContext, repo: 
         await state.clear()
         return
 
-    total_pages = (len(history) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
-
     await state.update_data(history=history, current_page=0, days=days)
     await state.set_state(WorkoutHistoryForm.viewing)
 
-    caption = build_caption(history, page=0, days=days)
-    photo_id = repo.users.paste_decoration_id('history')
-
-    sent = await message.answer_photo(
-        photo=photo_id,
-        caption=caption,
-        reply_markup=history_keyboard(current_page=0, total_pages=total_pages),
-        parse_mode='HTML',
-    )
-
+    sent = await send_history_message(message.bot, message.chat.id, state, repo) 
     await state.update_data(type_message_id=sent.message_id)
 
 
@@ -146,7 +157,8 @@ async def select_history_page(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(WorkoutHistoryForm.selecting_page)
     
     sent = await callback.message.answer(
-        f'⚡️ Введи номер страницы от 1 до {total_pages}:'
+        f'⚡️<b>Введи номер страницы от 1 до {total_pages}:</b>',
+        parse_mode='HTML'
     )
 
     await state.update_data(last_ask_message_id=sent.message_id)
@@ -154,7 +166,7 @@ async def select_history_page(callback: types.CallbackQuery, state: FSMContext):
 
 
 @router.message(WorkoutHistoryForm.selecting_page)
-async def jump_to_page(message: types.Message, state: FSMContext, repo: Repository):
+async def jump_to_page(message: types.Message, state: FSMContext):
     data = await state.get_data()
     total_pages = (len(data['history']) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
     
@@ -183,38 +195,76 @@ async def jump_to_page(message: types.Message, state: FSMContext, repo: Reposito
 
 @router.callback_query(WorkoutHistoryForm.viewing, F.data == 'edit_history')
 async def start_edit_choice(callback: types.CallbackQuery, state: FSMContext):
-    await state.set_state(WorkoutHistoryForm.selecting_edit)
-    
+    data = await state.get_data()
+
+    page = data['current_page']
+    start_idx = page * ITEMS_PER_PAGE
+    end_idx = start_idx + ITEMS_PER_PAGE
+
     sent = await callback.message.answer(
-        "📝 Введи **номер записи** из списка (1, 2, 3...), которую хочешь изменить:"
+        f"📝<b>Номер записи для редактирования ({start_idx + 1}-{end_idx}):</b>",
+        parse_mode='HTML'
     )
+
     await state.update_data(last_ask_message_id=sent.message_id)
+    await state.set_state(WorkoutHistoryForm.selecting_edit)
     await callback.answer()
 
+
 @router.message(WorkoutHistoryForm.selecting_edit)
-async def process_edit_selection(message: types.Message, state: FSMContext):
+async def process_edit_selection(message: types.Message, state: FSMContext, repo: Repository):
     data = await state.get_data()
+
     history = data['history']
     page = data['current_page']
+
+    choice = int(message.text)
     
     start_idx = page * ITEMS_PER_PAGE
     end_idx = start_idx + ITEMS_PER_PAGE
-    current_items = history[start_idx:end_idx]
+    current_item = history[start_idx:end_idx][(choice%ITEMS_PER_PAGE)-1]
+
+    await safe_delete_message(message.bot, message.chat.id, data['last_ask_message_id'])
+    await message.delete()
+
 
     if not message.text.isdigit():
         return await message.answer("Введи только число!")
 
-    choice = int(message.text)
+    dt = datetime.strptime(current_item['created_at'], "%Y-%m-%d %H:%M:%S")
+    date_str = "{} {} {:02d}:{:02d}".format(
+        dt.day,
+        MONTHS.get(dt.month),
+        dt.hour,
+        dt.minute
+    )
 
-    if not (start_idx + 1 <= choice <= start_idx + len(current_items)):
-        return await message.answer(f"Выбери номер из списка выше ({start_idx + 1}-{start_idx + len(current_items)})")
+    photo_id = repo.users.paste_decoration_id(current_item['workout_type'])
 
-    selected_workout = history[choice - 1]
-    
-    await message.delete()
-    await safe_delete_message(message.bot, message.chat.id, data['last_ask_message_id'])
+    caption = (
+    f"🏹 <b>Тип:</b> {WORKOUT_TYPES.get(current_item['workout_type'], current_item['workout_type'])}\n"
+    f"⌛ <b>Длительность:</b> {current_item['duration']} мин\n"
+    f"⚡️ <b>Интенсивность:</b> {current_item['intensity']}/{MAX_INTENSITY_LEVEL}\n\n"
+    f"<b>Заметка:</b> {current_item['notes'] or '—'}\n\n"
+    f"<b>📅 Дата добавления:</b> {date_str}"
+)
+    sent = await message.answer_photo(
+                                photo=photo_id,
+                                caption=caption,
+                                reply_markup=edit_history_entry_keyboard(),
+                                parse_mode='HTML'
+    )
 
-    await state.update_data(editing_workout_id=selected_workout['id']) 
-    # await state.set_state(WorkoutHistoryForm.editing_confirm) # Следующий шаг...
-    
-    await message.answer(f"Выбрана тренировка: {selected_workout['workout_type']}. Что именно хочешь изменить?")
+    await state.update_data(type_message_id=sent.message_id, editing_entry=current_item)
+
+
+@router.callback_query(WorkoutHistoryForm.selecting_edit, F.data == 'back_to_history')
+async def back_to_history(callback: types.CallbackQuery, state: FSMContext, repo: Repository):
+    data = await state.get_data()
+
+    await safe_delete_message(callback.bot, callback.message.chat.id, data['type_message_id'])
+    await state.set_state(WorkoutHistoryForm.viewing)
+
+    await send_history_message(callback.bot, callback.message.chat.id, state, repo)
+
+    await callback.answer()

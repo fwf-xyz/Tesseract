@@ -22,3 +22,17 @@ def history_keyboard(current_page: int = 0, total_pages: int = 1) -> InlineKeybo
         builder.adjust(1, 1, 1)
 
     return builder.as_markup()
+
+
+def edit_history_entry_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+
+    builder.button(text='✏️ Внести изменения', callback_data=f'edit_entry:entry_id')
+    builder.button(text='❌ Удалить запись', callback_data=f'delete_entry:entry_id')
+    builder.button(text='◀ Назад', callback_data='back_to_history')
+
+    builder.adjust(1, 1, 1)
+    return builder.as_markup()
+
+
+# entry_id: int
