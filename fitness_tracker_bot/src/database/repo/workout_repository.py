@@ -21,10 +21,17 @@ class WorkoutRepository:
         since = date.today() - timedelta(days=days_back)
 
         return self.conn.execute(
-            """SELECT created_at, workout_type, duration, intensity, notes
+            """SELECT id, workout_type, duration, intensity, notes, created_at
             FROM workouts 
             WHERE user_id = ? AND created_at >= ?
             ORDER BY created_at DESC
             """,
             (user_id, since)
         ).fetchall()
+    
+    def delete_entry(self, entry_id: int) -> None:
+        with self.conn:
+            self.conn.execute(
+                "DELETE FROM workouts WHERE id = ?",
+                (entry_id,)
+            )

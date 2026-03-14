@@ -16,7 +16,7 @@ async def start_cmd(message: types.Message, repo: Repository):
 
     repo.users.add_user(user_id, username)
 
-    text = f'<b>👋 Добро пожаловать, {username}!</b> \n \n Подпишись на мой <a href="http://t.me/cube_4d">тг-канал</a>!'
+    text = f'<b>👋 Добро пожаловать, {username}!</b>\n\nБуду рад тебя видеть в моем <a href="http://t.me/cube_4d">тг-канале</a>!'
     await message.answer(
         text=text,
         parse_mode='HTML',

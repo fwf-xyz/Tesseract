@@ -112,8 +112,7 @@ async def handle_history_input(message: types.Message, state: FSMContext, repo: 
     await state.update_data(history=history, current_page=0, days=days)
     await state.set_state(WorkoutHistoryForm.viewing)
 
-    sent = await send_history_message(message.bot, message.chat.id, state, repo) 
-    await state.update_data(type_message_id=sent.message_id)
+    await send_history_message(message.bot, message.chat.id, state, repo) 
 
 
 @router.callback_query(WorkoutHistoryForm.viewing, F.data.startswith('page_history:'))
@@ -218,6 +217,9 @@ async def process_edit_selection(message: types.Message, state: FSMContext, repo
     history = data['history']
     page = data['current_page']
 
+    if not message.text.isdigit():
+        return await message.answer("Введи только число!")
+
     choice = int(message.text)
     
     start_idx = page * ITEMS_PER_PAGE
@@ -225,11 +227,8 @@ async def process_edit_selection(message: types.Message, state: FSMContext, repo
     current_item = history[start_idx:end_idx][(choice%ITEMS_PER_PAGE)-1]
 
     await safe_delete_message(message.bot, message.chat.id, data['last_ask_message_id'])
+    await safe_delete_message(message.bot, message.chat.id, data['type_message_id'])
     await message.delete()
-
-
-    if not message.text.isdigit():
-        return await message.answer("Введи только число!")
 
     dt = datetime.strptime(current_item['created_at'], "%Y-%m-%d %H:%M:%S")
     date_str = "{} {} {:02d}:{:02d}".format(
@@ -246,7 +245,7 @@ async def process_edit_selection(message: types.Message, state: FSMContext, repo
     f"⌛ <b>Длительность:</b> {current_item['duration']} мин\n"
     f"⚡️ <b>Интенсивность:</b> {current_item['intensity']}/{MAX_INTENSITY_LEVEL}\n\n"
     f"<b>Заметка:</b> {current_item['notes'] or '—'}\n\n"
-    f"<b>📅 Дата добавления:</b> {date_str}"
+    f"<b>📅 Дата добавления:</b>\n{date_str}"
 )
     sent = await message.answer_photo(
                                 photo=photo_id,
@@ -268,3 +267,31 @@ async def back_to_history(callback: types.CallbackQuery, state: FSMContext, repo
     await send_history_message(callback.bot, callback.message.chat.id, state, repo)
 
     await callback.answer()
+
+
+@router.callback_query(WorkoutHistoryForm.selecting_edit, F.data == 'delete_entry')
+async def delete_history_entry(callback: types.CallbackQuery, state: FSMContext, repo: Repository):
+    data = await state.get_data()
+    entry = data['editing_entry']
+
+    repo.workouts.delete_entry(entry['id'])
+
+    await safe_delete_message(callback.bot, callback.message.chat.id, data['type_message_id'])
+    await state.set_state(WorkoutHistoryForm.viewing)
+
+    history = repo.workouts.get_history(callback.from_user.id, data['days'])
+
+    if len(history) > 0:
+        await state.update_data(history=history)
+    else:
+        await state.clear()
+        await callback.message.answer('<b>За указанный период нет данных о тренировках.</b>'
+                                    '\n\n<b>Вернись в меню и выбери другой период для просмотра истории.</b>',
+                                    parse_mode='HTML'
+                                    )
+        return
+    
+    await send_history_message(callback.bot, callback.message.chat.id, state, repo)
+
+    await callback.answer('✅Тренировка успешно удалена!',
+                        show_alert=True)

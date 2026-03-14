@@ -37,7 +37,7 @@ async def confirm_workout_data(message: types.Message, state: FSMContext,
         f'⌛ <b>Длительность:</b> {duration} мин\n'
         f'⚡️ <b>Интенсивность:</b> {intensity}/{MAX_INTENSITY_LEVEL}\n\n'
         f'<b>Заметка:</b> {note or "—"}\n\n'
-        f'📅 <b>Дата:</b> {date_str}'
+        f'📅 <b>Дата:</b>\n{date_str}'
     )
 
     sent = await message.answer_photo(
