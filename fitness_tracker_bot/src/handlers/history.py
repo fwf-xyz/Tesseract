@@ -241,9 +241,9 @@ async def process_edit_selection(message: types.Message, state: FSMContext, repo
     photo_id = repo.users.paste_decoration_id(current_item['workout_type'])
 
     caption = (
-    f"🏹 <b>Тип:</b> {WORKOUT_TYPES.get(current_item['workout_type'], current_item['workout_type'])}\n"
-    f"⌛ <b>Длительность:</b> {current_item['duration']} мин\n"
-    f"⚡️ <b>Интенсивность:</b> {current_item['intensity']}/{MAX_INTENSITY_LEVEL}\n\n"
+    f"<b>Тип:</b> {WORKOUT_TYPES.get(current_item['workout_type'], current_item['workout_type'])}\n"
+    f"<b>Длительность:</b> {current_item['duration']} мин\n"
+    f"<b>Интенсивность:</b> ⚡️{current_item['intensity']}/{MAX_INTENSITY_LEVEL}\n\n"
     f"<b>Заметка:</b> {current_item['notes'] or '—'}\n\n"
     f"<b>📅 Дата добавления:</b>\n{date_str}"
 )

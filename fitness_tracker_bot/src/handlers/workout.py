@@ -120,7 +120,7 @@ async def choose_intensity(message: types.Message, state: FSMContext):
     await state.update_data(intensity=int(message.text))
 
     sent = await message.answer(
-        '📝<b>Добавь заметку к тренировке:</b>',
+        '<b>📝 Заметка (полезно для статистики):</b>',
         reply_markup=skip_note_keyboard(),
         parse_mode='HTML'
     )
@@ -175,5 +175,5 @@ async def cancel_workout(callback: types.CallbackQuery, state: FSMContext) -> No
     await safe_delete_message(callback.bot, callback.message.chat.id, data['type_message_id'])
 
     await state.clear()
-    await callback.message.answer('❌ Запись тренировки отменена')
+    await callback.answer('❌ Запись тренировки отменена')
     await callback.answer()

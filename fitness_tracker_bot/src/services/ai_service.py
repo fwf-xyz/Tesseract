@@ -1,22 +1,29 @@
 from google import genai
+from google.genai import types
 from config import GEMINI_API_KEY
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-response = client.models.generate_content(
-    model="gemini-3.1-flash-lite-preview", contents="""УБЕРИ ЛИШНИЕ СИМВОЛЫ ВЫДЕЛЕНИЯ (используй разметку HTML) И ОСТАВЬ ЛУЧШЕ СТИКЕРЫ, в результате отправь готовое саммари, которое можно поместить в сообщение тг: 🎯 Цель: сбросить 5 кг лишнего веса
-    📅 Период тренировок: 03.03.2026 — 13.03.2026 (11 дней)
-    📊 Всего сессий: ~35
-    💪 Силовые (strength): ~15 сессий, средняя длительность ~50 мин, интенсивность 1–5
-    🏃 Кардио (cardio): ~10 сессий, длительность 10–100 мин, интенсивность 1–5
-    🧘 Растяжка (stretch): ~10 сессий, длительность 15–90 мин, интенсивность 2–4
-    ⚡ Интенсивность: от 1 до 5, большинство сессий на 3–4
-    📝 Заметки: единичные (abs, Calm, Становая тяга и др.)
-    Проанализируй мои тренировки и дай конкретные рекомендации:
-    1️⃣ Какого типа тренировок не хватает для жиросжигания?
-    2️⃣ Оптимальное соотношение кардио/силовых для моей цели?
-    3️⃣ Что скорректировать по интенсивности и длительности?
-    4️⃣ Нужен ли дефицит калорий и какой?"""
-    )
+import logging
 
-print(response.text)
+def get_ai_analysis(prompt: str) -> str:
+    try:
+        response = client.models.generate_content(
+            model="gemini-3.1-flash-lite-preview",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(
+                    include_thoughts=False,
+                    thinking_level="high"
+                ),
+                temperature=0.1,
+                top_p=0.95,
+            )
+        )
+        if response.text:
+            return response.text
+        return "Ошибка: Модель вернула пустой ответ."
+        
+    except Exception as e:
+        logging.error(f"Ошибка при запросе к Gemini: {e}")
+        return "Произошла ошибка при анализе данных. Попробуйте позже."
