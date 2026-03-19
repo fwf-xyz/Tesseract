@@ -14,16 +14,35 @@ async def start_cmd(message: types.Message, repo: Repository):
     user_id = message.from_user.id
     username = message.from_user.username
 
-    repo.users.add_user(user_id, username)
+    if repo.users.exists_user(user_id):
 
-    text = f'<b>👋 Добро пожаловать, {username}!</b>\n\nБуду рад тебя видеть в моем <a href="http://t.me/cube_4d">тг-канале</a>!'
-    await message.answer(
-        text=text,
-        parse_mode='HTML',
-        reply_markup=get_main_reply_keyboard()
-    )
+        print('Пользователь уже есть в базе данных')
 
-    await send_main_menu(message, repo)
+        text = f'<b>👋 Добро пожаловать, {username}!</b>\n\nБуду рад тебя видеть в моем <a href="http://t.me/cube_4d">тг-канале</a>!'
+        await message.answer(
+            text=text,
+            parse_mode='HTML',
+            reply_markup=get_main_reply_keyboard()
+        )
+
+        await send_main_menu(message, repo)
+
+
+    else:
+        text = 'Приветствую тебя новый польльзователь!!!'
+        await message.answer(text= text,
+                            # reply_markup= '',
+                            parse_mode='HTML'
+        )
+
+        print('ПОЛЬЗОВАТЕЛЯ НЕТ В БАЗЕ ДАННЫХ')
+
+
+
+        
+        # repo.users.add_user(user_id, username)
+
+
 
 
 

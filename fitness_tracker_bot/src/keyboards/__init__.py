@@ -2,3 +2,4 @@ from .main_menu import get_main_reply_keyboard, get_main_menu_keyboard, skip_not
 from .workout_keyboards import get_workout_type_keyboard, get_intensity_keyboard, verify_workout_keyboard
 from .history_keyboards import history_keyboard, edit_history_entry_keyboard
 from .stats_keyboards import get_stats_keyboard, save_ai_summary_keyboard
+from .help_keyboards import get_help_keyboard

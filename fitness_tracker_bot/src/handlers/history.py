@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from database import Repository
 from states import WorkoutHistoryForm
 from keyboards import history_keyboard, edit_history_entry_keyboard
-from utils import WORKOUT_TYPES, MONTHS, safe_delete_message
+from utils import WORKOUT_TYPES, MONTHS, safe_delete_messages
 
 from config import MAX_INTENSITY_LEVEL
 
@@ -33,14 +33,16 @@ async def send_history_message(bot, chat_id: int, state: FSMContext, repo: Repos
         parse_mode='HTML',
     )
 
-    await state.update_data(type_message_id=sent.message_id)
+    await state.update_data(messages_to_delete=[sent.message_id])
 
 
 @router.callback_query(F.data.startswith('close_'))
 async def close_handler(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
 
-    await safe_delete_message(callback.bot, callback.message.chat.id, data['type_message_id'])
+    messages_to_delete = data.get('messages_to_delete', [])
+    if messages_to_delete:
+        await safe_delete_messages(callback.bot, callback.message.chat.id, messages_to_delete)
 
     await state.clear()
     await callback.answer()
@@ -76,7 +78,7 @@ def build_caption(history: list, page: int, days: int) -> str:
 async def cancel_history(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
 
-    safe_delete_message(callback.bot, callback.message.chat.id, data['type_message_id'])
+    safe_delete_messages(callback.bot, callback.message.chat.id, data['messages_to_delete'])
     await state.clear()
 
 
@@ -86,7 +88,7 @@ async def ask_history_period(callback: types.CallbackQuery, state: FSMContext):
                                         parse_mode='HTML')
 
     await state.set_state(WorkoutHistoryForm.history)
-    await state.update_data(type_message_id=sent.message_id)
+    await state.update_data(messages_to_delete=[sent.message_id])
     await callback.answer()
 
 
@@ -95,7 +97,7 @@ async def handle_history_input(message: types.Message, state: FSMContext, repo: 
     data = await state.get_data()
 
     await message.delete()
-    await safe_delete_message(message.bot, message.chat.id, data['type_message_id'])
+    await safe_delete_messages(message.bot, message.chat.id, data['messages_to_delete'])
 
     if not message.text.isdigit():
         await message.answer('Введи натуральное число:')
@@ -142,7 +144,7 @@ async def handle_history_page(callback: types.CallbackQuery, state: FSMContext):
         parse_mode='HTML',
     )
 
-    await state.update_data(type_message_id=sent.message_id)
+    await state.update_data(messages_to_delete=[sent.message_id])
 
     await callback.answer()
 
@@ -160,7 +162,7 @@ async def select_history_page(callback: types.CallbackQuery, state: FSMContext):
         parse_mode='HTML'
     )
 
-    await state.update_data(last_ask_message_id=sent.message_id)
+    await state.update_data(message_id=sent.message_id)
     await callback.answer()
 
 
@@ -170,8 +172,8 @@ async def jump_to_page(message: types.Message, state: FSMContext):
     total_pages = (len(data['history']) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
     
     await message.delete()
-    if 'last_ask_message_id' in data:
-        await safe_delete_message(message.bot, message.chat.id, data['last_ask_message_id'])
+    if 'messages_to_delete' in data:
+        await safe_delete_messages(message.bot, message.chat.id, data['messages_to_delete'])
 
     if not message.text.isdigit() or not (1 <= int(message.text) <= total_pages):
         await message.answer(f"❌ Введи корректное число от 1 до {total_pages}")
@@ -184,7 +186,7 @@ async def jump_to_page(message: types.Message, state: FSMContext):
     caption = build_caption(data['history'], page=new_page, days=data['days'])
     await message.bot.edit_message_caption(
         chat_id=message.chat.id,
-        message_id=data['type_message_id'],
+        message_id=data['messages_to_delete'],
         caption=caption,
         reply_markup=history_keyboard(current_page=new_page, total_pages=total_pages),
         parse_mode='HTML'
@@ -205,7 +207,7 @@ async def start_edit_choice(callback: types.CallbackQuery, state: FSMContext):
         parse_mode='HTML'
     )
 
-    await state.update_data(last_ask_message_id=sent.message_id)
+    await state.update_data(messages_to_delete=[sent.message_id])
     await state.set_state(WorkoutHistoryForm.selecting_edit)
     await callback.answer()
 
@@ -226,8 +228,8 @@ async def process_edit_selection(message: types.Message, state: FSMContext, repo
     end_idx = start_idx + ITEMS_PER_PAGE
     current_item = history[start_idx:end_idx][(choice%ITEMS_PER_PAGE)-1]
 
-    await safe_delete_message(message.bot, message.chat.id, data['last_ask_message_id'])
-    await safe_delete_message(message.bot, message.chat.id, data['type_message_id'])
+    await safe_delete_messages(message.bot, message.chat.id, data['messages_to_delete'])
+    await safe_delete_messages(message.bot, message.chat.id, data['messages_to_delete'])
     await message.delete()
 
     dt = datetime.strptime(current_item['created_at'], "%Y-%m-%d %H:%M:%S")
@@ -254,14 +256,14 @@ async def process_edit_selection(message: types.Message, state: FSMContext, repo
                                 parse_mode='HTML'
     )
 
-    await state.update_data(type_message_id=sent.message_id, editing_entry=current_item)
+    await state.update_data(messages_to_delete=[sent.message_id], editing_entry=current_item)
 
 
 @router.callback_query(WorkoutHistoryForm.selecting_edit, F.data == 'back_to_history')
 async def back_to_history(callback: types.CallbackQuery, state: FSMContext, repo: Repository):
     data = await state.get_data()
 
-    await safe_delete_message(callback.bot, callback.message.chat.id, data['type_message_id'])
+    await safe_delete_messages(callback.bot, callback.message.chat.id, data['messages_to_delete'])
     await state.set_state(WorkoutHistoryForm.viewing)
 
     await send_history_message(callback.bot, callback.message.chat.id, state, repo)
@@ -276,7 +278,7 @@ async def delete_history_entry(callback: types.CallbackQuery, state: FSMContext,
 
     repo.workouts.delete_entry(entry['id'])
 
-    await safe_delete_message(callback.bot, callback.message.chat.id, data['type_message_id'])
+    await safe_delete_messages(callback.bot, callback.message.chat.id, data['messages_to_delete'])
     await state.set_state(WorkoutHistoryForm.viewing)
 
     history = repo.workouts.get_history(callback.from_user.id, data['days'])

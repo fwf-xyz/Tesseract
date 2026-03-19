@@ -5,7 +5,7 @@ from states import StatsForm
 
 from services import get_ai_analysis
 from keyboards import get_stats_keyboard, save_ai_summary_keyboard
-from utils import safe_delete_message
+from utils import safe_delete_messages
 
 from database import Repository
 from config import MAX_INTENSITY_LEVEL
@@ -16,8 +16,28 @@ router = Router()
 
 @router.callback_query(F.data == "stats")
 async def start_cmd(callback: types.CallbackQuery, state: FSMContext, repo: Repository):
+    history = repo.workouts.get_history(callback.from_user.id, 7)
+
+    quantity_workouts = len(history)
+    avg_intensivity = round(
+        sum(int(row['intensity']) for row in history) / quantity_workouts,
+        1
+    )
+
+    avg_workouts_duration = round(
+        sum(int(row['duration']) for row in history) / quantity_workouts,
+        1
+    )
+
+
     photo_id = repo.users.paste_decoration_id('stats')
-    caption = f'<b>🔽Статистика За 7 Дней\n\nКол-во тренировок:\n\nСредн. Интенсивность:</b> ⚡️DIGIT/{MAX_INTENSITY_LEVEL}'
+    caption = ( 
+                f'<b>🔽 Статистика За 7 Дней</b>\n\n'
+                f'<b>Кол-во тренировок:</b> 🏌️‍♀️{quantity_workouts}\n\n'
+                f'<b>📊Средние значения:</b>\n'
+                f'<b>Интенсивность:</b> ⚡️{avg_intensivity}/{MAX_INTENSITY_LEVEL}\n'
+                f'<b>Длительность:</b> ⏳{avg_workouts_duration} (мин.)'
+    )
 
     sent = await callback.message.answer_photo(
         photo=photo_id,
@@ -27,7 +47,7 @@ async def start_cmd(callback: types.CallbackQuery, state: FSMContext, repo: Repo
     )
 
     await state.set_state(StatsForm.weekly_stats)
-    await state.update_data(type_message_id=sent.message_id)
+    await state.update_data(messages_to_delete=[sent.message_id])
     await callback.answer()
 
 
@@ -36,7 +56,9 @@ async def start_cmd(callback: types.CallbackQuery, state: FSMContext, repo: Repo
 async def cancel_history(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
 
-    safe_delete_message(callback.bot, callback.message.chat.id, data['type_message_id'])
+    safe_delete_messages(callback.bot,
+                        callback.message.chat.id,
+                        data['messages_to_delete'])
     await state.clear()
 
 

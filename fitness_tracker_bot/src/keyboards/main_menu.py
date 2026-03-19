@@ -4,8 +4,11 @@ from aiogram.types import KeyboardButton, InlineKeyboardButton
 
 def get_main_reply_keyboard():
     builder = ReplyKeyboardBuilder()
+
     builder.add(KeyboardButton(text="🏋️Меню"))
     builder.add(KeyboardButton(text="💬Помощь"))
+
+    builder.adjust(1, 1)
 
     return builder.as_markup(
         resize_keyboard=True,
