@@ -8,12 +8,12 @@ class WorkoutRepository:
 
 
     def save_workout(self, user_id: int, workout_type: str, duration: int, 
-                    intensity: str, note: str | None, created_at: str) -> None:
+                    intensity: str, note: str | None) -> None:
         with self.conn:
             self.conn.execute(
-                """INSERT INTO workouts (user_id, workout_type, duration, intensity, notes, created_at) 
+                """INSERT INTO workouts (user_id, workout_type, duration, intensity, notes) 
                 VALUES (?, ?, ?, ?, ?, ?)""",
-                (user_id, workout_type, duration, intensity, note, created_at)
+                (user_id, workout_type, duration, intensity, note)
             )
 
 

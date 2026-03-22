@@ -2,7 +2,8 @@ CREATE_USERS_TABLE = """
 CREATE TABLE IF NOT EXISTS users (
     user_id     INTEGER PRIMARY KEY,
     username    TEXT,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    consent_version TEXT NOT NULL DEFAULT '1.0'
 );
 """
 
@@ -23,10 +24,10 @@ CREATE_GOALS_TABLE = """
 CREATE TABLE IF NOT EXISTS goals (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id       INTEGER NOT NULL,
-    goal_type     TEXT NOT NULL,
-    target_value  INTEGER NOT NULL,
-    current_value INTEGER DEFAULT 0,
-    deadline      TIMESTAMP,
+    goal          TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'in_progress',
+    deadline      TIMESTAMP NOT NULL,
+    completed_at  TIMESTAMP,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
@@ -74,6 +75,20 @@ CREATE TABLE IF NOT EXISTS ai_summaries_history (
 );
 """
 
+CREATE_USER_PROFILES_TABLE = """
+CREATE TABLE IF NOT EXISTS user_profiles (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id        INTEGER NOT NULL,
+    age            INTEGER NOT NULL,
+    gender         TEXT NOT NULL,
+    height         INTEGER NOT NULL,
+    weight         INTEGER NOT NULL,
+    health_params  TEXT,
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+"""
+
 
 ALL_TABLES = [
     CREATE_USERS_TABLE,
@@ -82,5 +97,6 @@ ALL_TABLES = [
     CREATE_FRIENDS_TABLE,
     CREATE_ACHIEVEMENTS_TABLE,
     CREATE_FILEID_TABLE,
-    CREATE_AI_SUMMARIES_HISTORY_TABLE
+    CREATE_AI_SUMMARIES_HISTORY_TABLE,
+    CREATE_USER_PROFILES_TABLE
 ]

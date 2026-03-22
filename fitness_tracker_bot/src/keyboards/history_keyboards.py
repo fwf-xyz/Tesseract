@@ -1,6 +1,8 @@
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+
+
 def history_keyboard(current_page: int = 0, total_pages: int = 1) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     nav_count = 0

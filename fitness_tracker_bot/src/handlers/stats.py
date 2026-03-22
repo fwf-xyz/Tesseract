@@ -8,7 +8,8 @@ from keyboards import get_stats_keyboard, save_ai_summary_keyboard
 from utils import safe_delete_messages
 
 from database import Repository
-from config import MAX_INTENSITY_LEVEL
+
+from utils import WorkoutConstants
 
 
 router = Router()
@@ -35,7 +36,7 @@ async def start_cmd(callback: types.CallbackQuery, state: FSMContext, repo: Repo
                 f'<b>🔽 Статистика За 7 Дней</b>\n\n'
                 f'<b>Кол-во тренировок:</b> 🏌️‍♀️{quantity_workouts}\n\n'
                 f'<b>📊Средние значения:</b>\n'
-                f'<b>Интенсивность:</b> ⚡️{avg_intensivity}/{MAX_INTENSITY_LEVEL}\n'
+                f'<b>Интенсивность:</b> ⚡️{avg_intensivity}/{WorkoutConstants.MAX_INTENSITY}\n'
                 f'<b>Длительность:</b> ⏳{avg_workouts_duration} (мин.)'
     )
 

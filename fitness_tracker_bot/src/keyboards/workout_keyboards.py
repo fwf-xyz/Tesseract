@@ -16,16 +16,6 @@ def get_workout_type_keyboard():
     return builder.as_markup()
 
 
-def get_intensity_keyboard():
-    builder = InlineKeyboardBuilder()
-
-    builder.add(InlineKeyboardButton(text='🟢 Лёгкая', callback_data='intensity_low'))
-    builder.add(InlineKeyboardButton(text='🟡 Средняя', callback_data='intensity_medium'))
-    builder.add(InlineKeyboardButton(text='🔴 Высокая', callback_data='intensity_high'))
-
-    return builder.as_markup()
-
-
 def verify_workout_keyboard():
     builder = InlineKeyboardBuilder()
 

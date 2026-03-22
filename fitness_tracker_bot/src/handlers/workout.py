@@ -4,11 +4,14 @@ from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
 
 from states import WorkoutForm
+
 from keyboards import get_workout_type_keyboard, skip_note_keyboard, verify_workout_keyboard
-from services import build_confirmation_caption, validate_duration, validate_intensity, save_workout 
+from services import build_confirmation_caption, save_workout
+
+
 
 from database import Repository
-from utils import WORKOUT_TYPES, safe_delete_messages
+from utils import WorkoutConstants, safe_delete_messages, validate_duration, validate_intensity
 
 
 router = Router()
@@ -18,7 +21,7 @@ async def confirm_workout_data(message: types.Message, state: FSMContext,
                                 note: str | None, repo: Repository) -> None:
     data = await state.get_data()
 
-    workout_type = WORKOUT_TYPES.get(data.get('type', 'Unknown'), data.get('type', 'Unknown'))
+    workout_type = WorkoutConstants.TYPES.get(data.get('type', 'Unknown'), data.get('type', 'Unknown'))
     duration = data.get('duration', 0)
     intensity = data.get('intensity', None)
 
@@ -136,8 +139,8 @@ async def handle_skip_note(callback: types.CallbackQuery, state: FSMContext, rep
 
     await confirm_workout_data(callback.message, state, None, repo)
 
-    await callback.answer()
     await state.set_state(WorkoutForm.verify)
+    await callback.answer()
 
 
 @router.callback_query(WorkoutForm.verify, F.data == 'confirm_workout')

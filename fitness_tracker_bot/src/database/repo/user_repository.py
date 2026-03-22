@@ -4,6 +4,7 @@ class UserRepository:
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
 
+
     def exists_user(self, user_id: int) -> bool:
         with self.conn:
             cursor = self.conn.execute(
@@ -11,15 +12,15 @@ class UserRepository:
             )
             return bool(cursor.fetchone()[0])
 
-    def add_user(self, user_id, username):
-        cursor = self.conn.cursor()
-        cursor.execute(
+
+    def add_user(self, user_id, username) -> None:
+        with self.conn:
+            self.conn.execute(
                 """INSERT OR IGNORE INTO users (user_id, username)
                 VALUES (?, ?)""",
                 (user_id, username)
             )
 
-        self.conn.commit()
 
     def paste_decoration_id(self, content_name: str) -> str | None:
         cursor = self.conn.cursor()

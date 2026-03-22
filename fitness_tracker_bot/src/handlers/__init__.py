@@ -1,5 +1,5 @@
 from aiogram import Router
-from . import errors, get_design_id, history, start, menu, workout, stats, help
+from . import errors, get_design_id, history, profile, start, menu, workout, stats, help
 
 router = Router()
 
@@ -10,6 +10,7 @@ router.include_routers(
                         history.router,
                         stats.router,
                         get_design_id.router,
+                        profile.router,
                         errors.router,
                         help.router
 )

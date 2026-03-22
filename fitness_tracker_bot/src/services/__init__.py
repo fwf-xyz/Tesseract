@@ -1,2 +1,4 @@
 from .ai_service import get_ai_analysis
-from .workout_service import build_confirmation_caption, validate_duration, validate_intensity, save_workout 
+from .workout_service import build_confirmation_caption, save_workout 
+from .profile_service import save_user_profile
+from .goals_service import save_goal

@@ -1,5 +1,6 @@
 from aiogram.fsm.state import State, StatesGroup
 
+
 class ProfileForm(StatesGroup):
     Consent = State()
     Age = State()
@@ -7,4 +8,6 @@ class ProfileForm(StatesGroup):
     Height = State()
     Weight = State()
     HealthParams = State()
+    Goal = State()
+    Deadline = State()
     Complete = State()

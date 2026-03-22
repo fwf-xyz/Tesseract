@@ -4,15 +4,16 @@ from aiogram import types, F, Router
 from aiogram.fsm.context import FSMContext
 
 from database import Repository
+
 from states import WorkoutHistoryForm
 from keyboards import history_keyboard, edit_history_entry_keyboard
-from utils import WORKOUT_TYPES, MONTHS, safe_delete_messages
 
-from config import MAX_INTENSITY_LEVEL
-
+from utils import safe_delete_messages
+from utils import WorkoutConstants, DateConstants
 
 router = Router()
 
+#перенести в константы
 ITEMS_PER_PAGE = 5 
 
 async def send_history_message(bot, chat_id: int, state: FSMContext, repo: Repository):
@@ -60,13 +61,13 @@ def build_caption(history: list, page: int, days: int) -> str:
     for number, workout in enumerate(page_items, start=start + 1):
         dt = datetime.strptime(workout['created_at'], "%Y-%m-%d %H:%M:%S")
         date_str = "{} {} {:02d}:{:02d}".format(
-            dt.day, MONTHS.get(dt.month), dt.hour, dt.minute
+            dt.day, DateConstants.MONTHS.get(dt.month), dt.hour, dt.minute
         )
         caption += '<b>{}: {} - {} мин</b>\n<i>[{}]</i>\n<b>Дата:</b> {}\n\n'.format(
             number,
-            WORKOUT_TYPES.get(workout['workout_type'], workout['workout_type']),
+            WorkoutConstants.TYPES.get(workout['workout_type'], workout['workout_type']),
             str(workout['duration']),
-            f'⚡️{workout['intensity']}/{MAX_INTENSITY_LEVEL}',
+            f'⚡️{workout['intensity']}/{WorkoutConstants.MAX_INTENSITY}',
             date_str,
         )
     caption += '------------\n'
@@ -235,7 +236,7 @@ async def process_edit_selection(message: types.Message, state: FSMContext, repo
     dt = datetime.strptime(current_item['created_at'], "%Y-%m-%d %H:%M:%S")
     date_str = "{} {} {:02d}:{:02d}".format(
         dt.day,
-        MONTHS.get(dt.month),
+        DateConstants.MONTHS.get(dt.month),
         dt.hour,
         dt.minute
     )
@@ -243,9 +244,9 @@ async def process_edit_selection(message: types.Message, state: FSMContext, repo
     photo_id = repo.users.paste_decoration_id(current_item['workout_type'])
 
     caption = (
-    f"<b>Тип:</b> {WORKOUT_TYPES.get(current_item['workout_type'], current_item['workout_type'])}\n"
+    f"<b>Тип:</b> {WorkoutConstants.TYPES.get(current_item['workout_type'], current_item['workout_type'])}\n"
     f"<b>Длительность:</b> {current_item['duration']} мин\n"
-    f"<b>Интенсивность:</b> ⚡️{current_item['intensity']}/{MAX_INTENSITY_LEVEL}\n\n"
+    f"<b>Интенсивность:</b> ⚡️{current_item['intensity']}/{WorkoutConstants.MAX_INTENSITY}\n\n"
     f"<b>Заметка:</b> {current_item['notes'] or '—'}\n\n"
     f"<b>📅 Дата добавления:</b>\n{date_str}"
 )

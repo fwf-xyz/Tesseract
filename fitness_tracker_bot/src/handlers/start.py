@@ -1,16 +1,21 @@
 from aiogram import Router, types
 from aiogram.filters import Command
 
+from aiogram.fsm.context import FSMContext
+from states import ProfileForm
+
 from utils import send_main_menu
 from keyboards import get_main_reply_keyboard
 from middlewares import Repository
+
+from .profile import send_user_consent
 
 
 router = Router()
 
 
 @router.message(Command('start'))
-async def start_cmd(message: types.Message, repo: Repository):
+async def start_cmd(message: types.Message, state: FSMContext, repo: Repository):
     user_id = message.from_user.id
     username = message.from_user.username
 
@@ -29,17 +34,13 @@ async def start_cmd(message: types.Message, repo: Repository):
 
 
     else:
-        text = 'Приветствую тебя новый польльзователь!!!'
-        await message.answer(text= text,
-                            # reply_markup= '',
-                            parse_mode='HTML'
-        )
-
-        print('ПОЛЬЗОВАТЕЛЯ НЕТ В БАЗЕ ДАННЫХ')
+        await message.delete()
+        await send_user_consent(message, state)
+        await state.set_state(ProfileForm.Consent)
 
 
 
-        
+
         # repo.users.add_user(user_id, username)
 
 

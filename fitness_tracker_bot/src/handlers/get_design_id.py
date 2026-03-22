@@ -1,5 +1,6 @@
 from aiogram import types, Router, F
 from config import ADMIN_ID
+
 from database import Repository
 
 
@@ -19,6 +20,7 @@ async def get_design_id(message: types.Message, repo: Repository):
     content = message.caption
     created_at = message.date.strftime('%Y-%m-%d %H:%M:%S')
 
+#нужно вынести в ветку repo
     cursor.execute(
         """INSERT INTO file_ids (user_id, file_id, content, created_at) 
         VALUES (?, ?, ?, ?)
