@@ -38,6 +38,16 @@ class ProfileConstants:
         'woman': 'Женский'
     }
 
+class GoalConstants:
+    DEFAULT_STATUS = "in_progress"
+
+    GOAL_STATUSES = {
+        "in_progress": '⚡️ В процессе выполнения',
+        "completed":  '🟢 Выполнена',
+        "failed":   '🔴 НЕ выполнена',
+        "partially_completed": '🟠 Выполнена частично'
+    }
+
 
 
 

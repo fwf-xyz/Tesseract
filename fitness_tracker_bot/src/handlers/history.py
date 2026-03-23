@@ -11,6 +11,7 @@ from keyboards import history_keyboard, edit_history_entry_keyboard
 from utils import safe_delete_messages
 from utils import WorkoutConstants, DateConstants
 
+
 router = Router()
 
 #перенести в константы

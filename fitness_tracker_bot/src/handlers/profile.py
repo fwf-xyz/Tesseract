@@ -200,7 +200,7 @@ async def confirm_save_profile(callback: types.CallbackQuery, state: FSMContext,
             reply_markup=get_main_reply_keyboard()
         )
 
-    await send_main_menu(callback.message, repo)
+    await send_main_menu(callback.message, repo, callback.from_user.id)
     await state.clear()
     await callback.answer('✅ Персональный профиль создан!')
 

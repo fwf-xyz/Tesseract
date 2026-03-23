@@ -4,3 +4,4 @@ from .history_keyboards import history_keyboard, edit_history_entry_keyboard
 from .stats_keyboards import get_stats_keyboard, save_ai_summary_keyboard
 from .help_keyboards import get_help_keyboard
 from .profile_keyboards import sent_consent_accept, gender_keyboard, skip_health_params, verify_profile_keyboard
+from .goals_keyboards import history_goals_keyboard, set_goal_status_keyboard

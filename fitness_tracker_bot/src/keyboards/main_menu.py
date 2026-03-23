@@ -26,10 +26,8 @@ def get_main_menu_keyboard():
     
     builder.add(InlineKeyboardButton(text="🎯 Цели", callback_data="goals"))
     builder.add(InlineKeyboardButton(text="👥 Друзья", callback_data="friends"))
-    
-    builder.add(InlineKeyboardButton(text="🏆 Достижения", callback_data="achievements"))
 
-    builder.adjust(1, 2, 2, 1)
+    builder.adjust(1, 2, 2)
     return builder.as_markup()
 
 

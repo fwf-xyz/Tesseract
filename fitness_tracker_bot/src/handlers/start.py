@@ -30,7 +30,7 @@ async def start_cmd(message: types.Message, state: FSMContext, repo: Repository)
             reply_markup=get_main_reply_keyboard()
         )
 
-        await send_main_menu(message, repo)
+        await send_main_menu(message, repo, message.from_user.id)
 
 
     else:

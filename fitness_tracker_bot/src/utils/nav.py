@@ -15,7 +15,7 @@ async def send_main_menu(message: Message, repo: Repository, user_id: int):
 
     photo_id = repo.users.paste_decoration_id('menu')
     goal_data = repo.goals.get_latest_goal(user_id)
-    caption = f'<b>🎯 Цель:</b> {goal_data["goal"]}'
+    caption = f'<b>🎯 Цель:</b> {goal_data["goal"]}\n\n<b>⏰ Дедлайн:</b> {goal_data["deadline"]}'
     await message.answer_photo(
         photo=photo_id,
         caption=caption,
