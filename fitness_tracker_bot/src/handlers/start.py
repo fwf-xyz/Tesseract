@@ -1,5 +1,7 @@
 from aiogram import Router, types
-from aiogram.filters import Command
+from aiogram.filters import CommandStart
+from aiogram.filters.command import CommandObject
+from aiogram.utils.deep_linking import decode_payload
 
 from aiogram.fsm.context import FSMContext
 from states import ProfileForm
@@ -14,12 +16,25 @@ from .profile import send_user_consent
 router = Router()
 
 
-@router.message(Command('start'))
-async def start_cmd(message: types.Message, state: FSMContext, repo: Repository):
+@router.message(CommandStart())
+async def start_cmd(message: types.Message,
+                    command: CommandObject,
+                    state: FSMContext,
+                    repo: Repository):
     user_id = message.from_user.id
     username = message.from_user.username
 
+    inviter_id = None
+    if command.args:
+        try:
+            decoded = decode_payload(command.args)
+        except Exception:
+            decoded = command.args
+        if decoded.startswith("add_"):
+            inviter_id = int(decoded.split("_")[1])
+
     if repo.users.exists_user(user_id):
+        await state.clear()
 
         print('Пользователь уже есть в базе данных')
 
@@ -32,16 +47,21 @@ async def start_cmd(message: types.Message, state: FSMContext, repo: Repository)
 
         await send_main_menu(message, repo, message.from_user.id)
 
+        if inviter_id:
+            if inviter_id != user_id:
+                await handle_friend_invite(message, inviter_id, repo)
 
     else:
-        await message.delete()
+        try:
+            await message.delete()
+        except Exception:
+            pass
+
+        await state.set_data({"inviter_id": inviter_id})
         await send_user_consent(message, state)
         await state.set_state(ProfileForm.Consent)
 
 
-
-
-        # repo.users.add_user(user_id, username)
 
 
 

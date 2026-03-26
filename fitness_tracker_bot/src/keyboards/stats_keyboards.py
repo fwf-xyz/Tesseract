@@ -11,7 +11,7 @@ def get_stats_keyboard():
     callback_data='math_stats'))
     builder.add(InlineKeyboardButton(text='История саммари',
     callback_data='ai_history_stats'))
-    builder.button(text='◀ Назад', callback_data='close_stats')
+    builder.button(text='× Закрыть', callback_data='close_stats')
 
     builder.adjust(1, 2, 1)
     return builder.as_markup()

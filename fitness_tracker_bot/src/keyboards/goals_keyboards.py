@@ -37,3 +37,12 @@ def set_goal_status_keyboard():
 
     builder.adjust(1, 1, 1)
     return builder.as_markup()
+
+
+def verify_new_goal_keyboard():
+    builder = InlineKeyboardBuilder()
+
+    builder.add(InlineKeyboardButton(text='✅ Подтвердить', callback_data='confirm_new_goal'))
+    builder.add(InlineKeyboardButton(text='❌ Отменить', callback_data='cancel_new_goal'))
+
+    return builder.as_markup()

@@ -35,7 +35,7 @@ async def send_history_message(bot, chat_id: int, state: FSMContext, repo: Repos
         parse_mode='HTML',
     )
 
-    await state.update_data(messages_to_delete=[sent.message_id])
+    await state.update_data(messages_to_delete=[sent.message_id], history_message_id=sent.message_id)
 
 
 @router.callback_query(F.data.startswith('close_'))
@@ -174,8 +174,10 @@ async def jump_to_page(message: types.Message, state: FSMContext):
     total_pages = (len(data['history']) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
     
     await message.delete()
-    if 'messages_to_delete' in data:
-        await safe_delete_messages(message.bot, message.chat.id, data['messages_to_delete'])
+
+    prompt_msg_id = data.get('message_id')
+    if prompt_msg_id:
+        await safe_delete_messages(message.bot, message.chat.id, [prompt_msg_id])
 
     if not message.text.isdigit() or not (1 <= int(message.text) <= total_pages):
         await message.answer(f"❌ Введи корректное число от 1 до {total_pages}")
@@ -186,9 +188,11 @@ async def jump_to_page(message: types.Message, state: FSMContext):
     await state.set_state(WorkoutHistoryForm.viewing)
 
     caption = build_caption(data['history'], page=new_page, days=data['days'])
+    
+    history_message_id = data['history_message_id']
     await message.bot.edit_message_caption(
         chat_id=message.chat.id,
-        message_id=data['messages_to_delete'],
+        message_id=history_message_id,
         caption=caption,
         reply_markup=history_keyboard(current_page=new_page, total_pages=total_pages),
         parse_mode='HTML'

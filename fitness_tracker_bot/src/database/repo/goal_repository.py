@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 class GoalRepository:
     def __init__(self, conn: sqlite3.Connection):
@@ -35,16 +36,21 @@ class GoalRepository:
     ).fetchall()
 
 
-    # def change_goal_status(self, user_id: int):
+    def change_goal_status(self, user_id: int, new_status: str) -> None:
+        completed_at = datetime.now()
 
-
-    # cursor.execute(
-    #     """INSERT INTO goals (status, completed_at) 
-    #     VALUES (?, ?)
-    #     ON CONFLICT(content) 
-    #     DO UPDATE SET 
-    #     user_id = excluded.user_id,
-    #     file_id = excluded.file_id,
-    #     created_at = excluded.created_at;""",
-    #     (user_id, file_id, content, created_at)
-    # )
+        with self.conn:
+            self.conn.execute("""
+                UPDATE goals 
+                SET status = ?, 
+                    completed_at = ?
+                WHERE id = (
+                    SELECT id 
+                    FROM goals 
+                    WHERE user_id = ? 
+                    ORDER BY created_at DESC 
+                    LIMIT 1
+                );
+            """,
+                (new_status, completed_at, user_id)
+            )

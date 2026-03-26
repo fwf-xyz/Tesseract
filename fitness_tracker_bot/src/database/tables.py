@@ -35,22 +35,17 @@ CREATE TABLE IF NOT EXISTS goals (
 
 CREATE_FRIENDS_TABLE = """
 CREATE TABLE IF NOT EXISTS friends (
-    user_id    INTEGER NOT NULL,
-    friend_id  INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, friend_id),
-    FOREIGN KEY (user_id)   REFERENCES users(user_id),
-    FOREIGN KEY (friend_id) REFERENCES users(user_id)
-);
-"""
-
-CREATE_ACHIEVEMENTS_TABLE = """
-CREATE TABLE IF NOT EXISTS achievements (
-    id             INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id        INTEGER NOT NULL,
-    achievement_id TEXT NOT NULL,
-    unlocked_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    id                       INTEGER PRIMARY KEY AUTOINCREMENT,
+    requester_id             INTEGER NOT NULL,
+    receiver_id              INTEGER NOT NULL,
+    status                   TEXT    NOT NULL DEFAULT 'pending'
+                                CHECK(status IN ('pending', 'accepted', 'declined')),
+    notification_message_id  INTEGER DEFAULT NULL,
+    created_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (requester_id, receiver_id),
+    FOREIGN KEY (requester_id) REFERENCES users(user_id),
+    FOREIGN KEY (receiver_id)  REFERENCES users(user_id)
 );
 """
 
@@ -95,7 +90,6 @@ ALL_TABLES = [
     CREATE_WORKOUTS_TABLE,
     CREATE_GOALS_TABLE,
     CREATE_FRIENDS_TABLE,
-    CREATE_ACHIEVEMENTS_TABLE,
     CREATE_FILEID_TABLE,
     CREATE_AI_SUMMARIES_HISTORY_TABLE,
     CREATE_USER_PROFILES_TABLE

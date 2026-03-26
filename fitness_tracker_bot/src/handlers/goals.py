@@ -5,8 +5,8 @@ from aiogram.fsm.context import FSMContext
 
 from database import Repository
 from states import GoalHistoryForm, ChangeGoalForm
-from keyboards import history_goals_keyboard, set_goal_status_keyboard
-from utils import safe_delete_messages, DateConstants, GoalConstants
+from keyboards import history_goals_keyboard, set_goal_status_keyboard, verify_new_goal_keyboard
+from utils import safe_delete_messages, DateConstants, GoalConstants, send_main_menu
 
 router = Router()
 
@@ -26,9 +26,9 @@ def build_goal_caption(history: list, page: int) -> str:
         date_str = "{} {} {:02d}:{:02d}".format(
             dt.day, DateConstants.MONTHS.get(dt.month), dt.hour, dt.minute
         )
-        deadline_str = goal['deadline'] or '—'
+        deadline_str = goal['deadline']
 
-        caption += '<b>{}. 🎯 {}</b>\n\n<b>Статус:</b> {}\n\n<b>Добавлена:</b> {}\n<b>⏰ Дедлайн:</b> {}\n\n'.format(
+        caption += '<b>{}.</b> <blockquote>🎯 {}</blockquote>\n\n<b>Статус:</b> {}\n\n<b>Добавлена:</b> {}\n<b>⏰ Дедлайн:</b> {}\n\n'.format(
         number,
         goal['goal'],
         GoalConstants.GOAL_STATUSES.get(goal['status'], goal['status']),
@@ -55,7 +55,7 @@ async def send_goals_message(bot, chat_id: int, state: FSMContext, repo: Reposit
         reply_markup=history_goals_keyboard(current_page=current_page, total_pages=total_pages),
         parse_mode='HTML',
     )
-    await state.update_data(messages_to_delete=[sent.message_id])
+    await state.update_data(messages_to_delete=[sent.message_id], goals_photo_message_id=sent.message_id,)
 
 
 
@@ -128,7 +128,7 @@ async def select_goals_page(callback: types.CallbackQuery, state: FSMContext):
 
 
 @router.message(GoalHistoryForm.selecting_page)
-async def jump_to_goals_page(message: types.Message, state: FSMContext):
+async def jump_to_goals_page(message: types.Message, state: FSMContext, repo: Repository):
     data = await state.get_data()
     total_pages = (len(data['history']) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
 
@@ -144,13 +144,20 @@ async def jump_to_goals_page(message: types.Message, state: FSMContext):
     await state.set_state(GoalHistoryForm.viewing)
 
     caption = build_goal_caption(data['history'], page=new_page)
-    await message.bot.edit_message_caption(
-        chat_id=message.chat.id,
-        message_id=data['messages_to_delete'][0],
-        caption=caption,
-        reply_markup=history_goals_keyboard(current_page=new_page, total_pages=total_pages),
-        parse_mode='HTML'
-    )
+
+    goals_photo_id = data.get('goals_photo_message_id')
+    if goals_photo_id:
+        sent = await message.bot.edit_message_caption(
+            chat_id=message.chat.id,
+            message_id=goals_photo_id,
+            caption=caption,
+            reply_markup=history_goals_keyboard(current_page=new_page, total_pages=total_pages),
+            parse_mode='HTML'
+        )
+    else:
+        sent = await send_goals_message(message.bot, message.chat.id, state, repo)
+
+    await state.update_data(messages_to_delete=[sent.message_id])
 
 
 
@@ -160,73 +167,94 @@ async def change_goal_handler(callback: types.CallbackQuery, state: FSMContext, 
     goal_data = repo.goals.get_latest_goal(callback.from_user.id)
 
     text = (
-        f'<b>Установи окончательный статус для прошлой цели:</b> \n\n'
-        f'🎯 {goal_data["goal"]}\n\n'
+        f'<b>Обнови статус для действующей цели:</b> \n\n'
+        f'<blockquote>🎯 {goal_data["goal"]}</blockquote>\n\n'
         f'<b>Добавлена:</b> {goal_data["created_at"]}\n'
         f'<b>⏰ Дедлайн:</b> {goal_data["deadline"]}'
     )
-    await callback.message.answer(text=text, reply_markup=set_goal_status_keyboard(), parse_mode='HTML')
+    sent = await callback.message.answer(text=text, reply_markup=set_goal_status_keyboard(), parse_mode='HTML')
 
+    await state.update_data(messages_to_delete=[sent.message_id])
     await state.set_state(ChangeGoalForm.set_status)
     await callback.answer()
 
 
 @router.callback_query(ChangeGoalForm.set_status, F.data.startswith('goal_status_'))
 async def choose_new_goal(callback: types.CallbackQuery, state: FSMContext):
-    await state.upd
-
-
     data = await state.get_data()
-
     await safe_delete_messages(callback.bot, callback.message.chat.id, data['messages_to_delete'])
 
-    workout_type = callback.data.replace('goal_status_', '')
-    await state.update_data(type=workout_type)
+    goal_status = callback.data.replace('goal_status_', '')
+    await state.update_data(goal_status=goal_status)
+
+    data = await state.get_data()
+    await safe_delete_messages(callback.bot, callback.message.chat.id, data['messages_to_delete'])
 
     sent = await callback.message.answer(
-        '⌛<b>Укажи длительность тренировки в минутах:</b>',
+        '<b>🎯 Установи новую цель для занятий тренировками:</b>',
         parse_mode='HTML'
     )
 
-    await state.set_state(WorkoutForm.duration)
+    await state.set_state(ChangeGoalForm.new_goal)
     await state.update_data(messages_to_delete=[sent.message_id])
     await callback.answer()
 
 
+@router.message(ChangeGoalForm.new_goal)
+async def choose_new_deadline(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    await safe_delete_messages(message.bot, message.chat.id, data['messages_to_delete'])
+    await message.delete()
+
+    await state.update_data(new_goal=message.text)
+    sent = await message.answer(text='<b>⏰ Установи дедлайн для своей цели (например: 2026-06-01):</b>', parse_mode='HTML')
+
+    await state.set_state(ChangeGoalForm.new_deadline)
+    await state.update_data(messages_to_delete=[sent.message_id])
 
 
-#добавление даты compeleted_at цели
-#меняется статус цели 
+@router.message(ChangeGoalForm.new_deadline)
+async def verify_new_goal(message: types.Message, state: FSMContext, repo: Repository):
+    await state.update_data(new_deadline=message.text)
+
+    data = await state.get_data()
+    await safe_delete_messages(message.bot, message.chat.id, data['messages_to_delete'])
+    await message.delete()
+
+    photo_id = repo.users.paste_decoration_id('new_goal')
+    text = (
+        f'<b>Проверь данные:</b>\n\n'
+        f'<b>Новая цель:</b><blockquote>🎯 {data['new_goal']}</blockquote>\n\n'
+        f'<b>⏰ Дедлайн:</b> {data['new_deadline']}'
+    )
+    sent = await message.answer_photo(
+        photo=photo_id,
+        caption=text,
+        reply_markup=verify_new_goal_keyboard(),
+        parse_mode='HTML'
+    )
+
+    await state.set_state(ChangeGoalForm.verify)
+    await state.update_data(messages_to_delete=[sent.message_id])
 
 
+@router.callback_query(ChangeGoalForm.verify, F.data == 'confirm_new_goal')
+async def confirm_new_goal(callback: types.CallbackQuery, state: FSMContext, repo: Repository) -> None:
+    data = await state.get_data()
+
+    repo.goals.change_goal_status(callback.from_user.id, data['goal_status'])
+    repo.goals.save_goal(callback.from_user.id, data['new_goal'], data['new_deadline'])
+    await send_main_menu(callback, repo, callback.from_user.id)
+
+    await callback.answer('✅ Новая цель была успешно поставлена!')
+    await state.clear()
 
 
+@router.callback_query(ChangeGoalForm.verify, F.data == 'cancel_new_goal')
+async def cancel_new_goal(callback: types.CallbackQuery, state: FSMContext) -> None:
+    data = await state.get_data()
+    await safe_delete_messages(callback.bot, callback.message.chat.id, data['messages_to_delete'])
 
+    await callback.answer('❌ Смена цели была отменена!')
 
-
-
-
-
-
-
-
-# @router.message(ProfileForm.HealthParams)
-# async def choose_health_params(message: types.Message, state: FSMContext):
-#     await cleanup(message.bot, message.chat.id, state, delete_user_msg=message)
-
-#     await state.update_data(health_params=message.text)
-#     await send_and_track(state, message,
-#                             '<b>🎯 Установи свою цель для занятий тренировками:</b>', parse_mode='HTML')
-
-#     await state.set_state(ProfileForm.Goal)
-
-
-# @router.message(ProfileForm.Goal)
-# async def choose_goal(message: types.Message, state: FSMContext):
-#     await cleanup(message.bot, message.chat.id, state, delete_user_msg=message)
-
-#     await state.update_data(goal=message.text)
-#     await send_and_track(state, message,
-#                             '<b>⏰ Установи дедлайн для своей цели (например: 2026-06-01):</b>', parse_mode='HTML')
-
-#     await state.set_state(ProfileForm.Deadline)
+    await state.clear()
