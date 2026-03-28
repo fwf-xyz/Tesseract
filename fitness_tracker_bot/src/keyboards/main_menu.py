@@ -33,12 +33,3 @@ def get_main_menu_keyboard():
     builder.adjust(1, 1, 2, 2)
     return builder.as_markup()
 
-
-def skip_note_keyboard():
-    builder = InlineKeyboardBuilder()
-    builder.add(InlineKeyboardButton(
-        text="➡️ Пропустить",
-        callback_data="skip_note"
-    ))
-
-    return builder.as_markup()

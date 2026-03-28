@@ -1,5 +1,6 @@
 from datetime import datetime
 from utils import WorkoutConstants, DateConstants
+from .constants import DateConstants
 
 
 def build_confirmation_caption(workout_type: str, duration: int,
@@ -15,3 +16,32 @@ def build_confirmation_caption(workout_type: str, duration: int,
         f'<b>Заметка:</b> {note or "—"}\n\n'
         f'📅 <b>Дата:</b>\n{date_str}'
     )
+
+
+def parse_ru_datetime(text: str) -> str | None:
+    try:
+        parts = text.strip().split()
+
+        if len(parts) != 4:
+            return None
+        
+        day = int(parts[0])
+        month = DateConstants.MONTHS_INPUT.get(parts[1].lower())
+        year = int(parts[2])
+        hour, minute = map(int, parts[3].split(':'))
+
+        if not month:
+            return None
+        
+        dt = datetime(year, month, day, hour, minute)
+        return dt.strftime('%Y-%m-%d %H:%M:%S')
+    
+    except (ValueError, AttributeError):
+        return None
+    
+
+def progress_bar(percent: int) -> str:
+    filled = percent // 10
+    empty = 10 - filled
+    bar = '█' * filled + '░' * empty
+    return f'[{bar}] {percent}%'

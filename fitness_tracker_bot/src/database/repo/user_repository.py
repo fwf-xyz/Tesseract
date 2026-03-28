@@ -32,3 +32,16 @@ class UserRepository:
         result = cursor.fetchone()
 
         return result[0] if result else None
+    
+
+    def get_user_gender(self, user_id: int):
+        cursor = self.conn.cursor()
+
+        cursor.execute("""
+            SELECT gender FROM user_profiles
+            WHERE user_id = ?""",
+            (user_id,)
+        )
+        result = cursor.fetchone()
+
+        return result[0] if result else None

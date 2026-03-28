@@ -23,3 +23,13 @@ def verify_workout_keyboard():
     builder.add(InlineKeyboardButton(text='❌ Отменить', callback_data='cancel_workout'))
 
     return builder.as_markup()
+
+
+def skip_note_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.add(InlineKeyboardButton(
+        text="➡️ Пропустить",
+        callback_data="skip_note"
+    ))
+
+    return builder.as_markup()

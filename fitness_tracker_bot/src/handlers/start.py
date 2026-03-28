@@ -11,6 +11,7 @@ from keyboards import get_main_reply_keyboard
 from middlewares import Repository
 
 from .profile import send_user_consent
+from services import handle_friend_invite
 
 
 router = Router()

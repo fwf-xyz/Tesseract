@@ -7,13 +7,11 @@ def get_stats_keyboard():
 
     builder.add(InlineKeyboardButton(text='🧠 ИИ-саммари',
     callback_data='ai_summary'))
-    builder.add(InlineKeyboardButton(text='Мат статистика',
+    builder.add(InlineKeyboardButton(text='📅 Изменить период статистики',
     callback_data='math_stats'))
-    builder.add(InlineKeyboardButton(text='История саммари',
-    callback_data='ai_history_stats'))
     builder.button(text='× Закрыть', callback_data='close_stats')
 
-    builder.adjust(1, 2, 1)
+    builder.adjust(1, 1, 1)
     return builder.as_markup()
 
 

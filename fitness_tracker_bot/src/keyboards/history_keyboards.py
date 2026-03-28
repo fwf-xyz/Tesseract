@@ -15,7 +15,7 @@ def history_keyboard(current_page: int = 0, total_pages: int = 1) -> InlineKeybo
         nav_count += 1
     if total_pages > 1:
         builder.button(text='⚡️ Быстрый выбор страницы', callback_data='select_page_history')
-    builder.button(text='✏️ Редактировать', callback_data='edit_history')
+    builder.button(text='✏️ Выбрать тренировку', callback_data='edit_history')
     builder.button(text='× Закрыть', callback_data='close_history')
 
     if nav_count:
@@ -29,8 +29,8 @@ def history_keyboard(current_page: int = 0, total_pages: int = 1) -> InlineKeybo
 def edit_history_entry_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
-    builder.button(text='✏️ Внести изменения', callback_data=f'edit_entry:entry_id')
-    builder.button(text='❌ Удалить тренировку', callback_data=f'delete_entry')
+    builder.button(text='✏️ Внести изменения', callback_data='edit_entry')
+    builder.button(text='❌ Удалить тренировку', callback_data='delete_entry')
     builder.button(text='◀ Назад', callback_data='back_to_history')
 
     builder.adjust(1, 1, 1)

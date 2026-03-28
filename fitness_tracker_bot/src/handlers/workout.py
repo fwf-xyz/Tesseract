@@ -8,8 +8,6 @@ from states import WorkoutForm
 from keyboards import get_workout_type_keyboard, skip_note_keyboard, verify_workout_keyboard
 from services import build_confirmation_caption, save_workout
 
-
-
 from database import Repository
 from utils import WorkoutConstants, safe_delete_messages, validate_duration, validate_intensity
 

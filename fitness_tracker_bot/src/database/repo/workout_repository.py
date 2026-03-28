@@ -35,3 +35,14 @@ class WorkoutRepository:
                 "DELETE FROM workouts WHERE id = ?",
                 (entry_id,)
             )
+
+
+    def update_entry(self, entry_id: int, workout_type: str, duration: int,
+                intensity: int, notes: str | None, created_at: str) -> None:
+        with self.conn:
+            self.conn.execute(
+                """UPDATE workouts
+                SET workout_type = ?, duration = ?, intensity = ?, notes = ?, created_at = ?
+                WHERE id = ?""",
+                (workout_type, duration, intensity, notes, created_at, entry_id)
+            )

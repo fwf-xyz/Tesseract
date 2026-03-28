@@ -1,9 +1,8 @@
 from aiogram.utils.deep_linking import create_start_link
-from aiogram import Bot
+from aiogram import Bot, types
 
-from aiogram import types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from middlewares import Repository
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
 async def get_invite_link(bot: Bot, user_id: int) -> str:
@@ -12,50 +11,46 @@ async def get_invite_link(bot: Bot, user_id: int) -> str:
 
 
 async def handle_friend_invite(message: types.Message, inviter_id: int, repo: Repository):
-    new_user_id = message.from_user.id
+    bot: Bot = message.bot
+    invited_id = message.from_user.id
+    invited_name = message.from_user.full_name
 
-    if new_user_id == inviter_id:
-        await message.answer("Нельзя добавить самого себя.")
+    # 1. Защита от само-добавления
+    if inviter_id == invited_id:
+        await message.answer("💡 Вы не можете добавить в друзья самого себя.")
         return
 
-    status = repo.friends.get_status(inviter_id, new_user_id)
-
-    if status == "completed":
-        await message.answer("Вы уже друзья!")
-        return
-    if status == "pending":
-        await message.answer("Заявка уже отправлена, ожидайте подтверждения.")
-        return
-    if status == "rejected":
-        await message.answer("Ваша заявка была отклонена ранее.")
+    # 2. Проверка, не друзья ли они уже (метод в repo нужно создать)
+    if repo.friends.are_already_friends(inviter_id, invited_id):
+        await message.answer("👥 Вы уже являетесь друзьями с этим пользователем!")
         return
 
-    inviter = repo.users.get_user(inviter_id)
-    if not inviter:
-        await message.answer("Пользователь, который вас пригласил, не найден.")
-        return
+    # 3. Отправляем уведомление тому, КТО пригласил (Inviter)
+    try:
+        builder = InlineKeyboardBuilder()
+        # В callback_data передаем ID того, кто постучался в друзья
+        builder.button(text="✅ Подтвердить", callback_data=f"accept_friend:{invited_id}")
+        builder.button(text="❌ Отклонить", callback_data=f"decline_friend:{invited_id}")
+        builder.adjust(2)
 
-    repo.friends.create_request(inviter_id, new_user_id)
-
-    await message.answer(
-        f"Пользователь <b>{inviter['username']}</b> хочет добавить вас в друзья!",
-        parse_mode="HTML"
-    )
-
-    kb = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(
-            text="✅ Принять",
-            callback_data=f"friend_accept_{new_user_id}"
-        ),
-        InlineKeyboardButton(
-            text="❌ Отклонить",
-            callback_data=f"friend_reject_{new_user_id}"
+        await bot.send_message(
+            chat_id=inviter_id,
+            text=(
+                f"🔔 <b>Новая заявка в друзья!</b>\n\n"
+                f"Пользователь <a href='tg://user?id={invited_id}'>{invited_name}</a> "
+                f"хочет добавить вас в друзья. Подтверждаете?"
+            ),
+            reply_markup=builder.as_markup(),
+            parse_mode="HTML"
         )
-    ]])
+        
+        # 4. Сообщаем тому, КТО перешел по ссылке (Invited)
+        await message.answer(
+            "✉️ <b>Запрос отправлен!</b>\n"
+            "Мы уведомили пользователя. Как только он нажмет «Подтвердить», "
+            "вы получите уведомление."
+        )
 
-    await message.bot.send_message(
-        chat_id=inviter_id,
-        text=f"Пользователь <b>{message.from_user.username}</b> перешёл по твоей ссылке!\n\nДобавить в друзья?",
-        parse_mode="HTML",
-        reply_markup=kb
-    )
+    except Exception as e:
+        # Если пригласивший заблокировал бота или что-то пошло не так
+        await message.answer("⚠️ Не удалось отправить запрос. Возможно, пользователь заблокировал бота.")

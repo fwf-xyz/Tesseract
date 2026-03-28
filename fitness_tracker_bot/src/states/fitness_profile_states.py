@@ -10,3 +10,12 @@ class ProfileForm(StatesGroup):
     Goal = State()
     Deadline = State()
     Complete = State()
+
+
+class EditProfileForm(StatesGroup):
+    Age = State()
+    Gender = State()
+    Height = State()
+    Weight = State()
+    HealthParams = State()
+    Complete = State()

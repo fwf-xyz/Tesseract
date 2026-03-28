@@ -196,5 +196,5 @@ async def handle_add_friend(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-@router.callback_query()
+# @router.callback_query()
 

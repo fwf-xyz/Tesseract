@@ -13,3 +13,12 @@ class WorkoutHistoryForm(StatesGroup):
     viewing = State()
     selecting_page = State()
     selecting_edit = State()
+
+
+class EditWorkoutEntryForm(StatesGroup):
+    workout_type = State()
+    duration = State()
+    intensity = State()
+    notes = State()
+    date = State()
+    complete = State()

@@ -31,6 +31,7 @@ class DateConstants:
             10: 'октября', 11: 'ноября', 12: 'декабря',
             422: 'техническая ошибка'
         }
+        MONTHS_INPUT = {v: k for k, v in MONTHS.items()}
 
 class ProfileConstants:
     GENDER_TYPES = {

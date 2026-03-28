@@ -39,3 +39,14 @@ def verify_profile_keyboard():
     builder.add(InlineKeyboardButton(text='❌ Отменить', callback_data='cancel_profile'))
 
     return builder.as_markup()
+
+
+def view_user_profile():
+    builder = InlineKeyboardBuilder()
+
+    builder.add(InlineKeyboardButton(text='📝 Внести изменения', callback_data='edit_user_profile'))
+    builder.add(InlineKeyboardButton(text='× Закрыть', callback_data='close_user_profile'))
+
+    builder.adjust(1, 1)
+    return builder.as_markup()
+
