@@ -3,6 +3,7 @@ from .user_repository import UserRepository
 from .profile_repository import ProfileRepository
 from .goal_repository import GoalRepository
 from .friend_repository import FriendRepository
+from .ai_repository import AIRepository
 
 
 class Repository:
@@ -13,3 +14,4 @@ class Repository:
         self.profiles = ProfileRepository(conn)
         self.goals = GoalRepository(conn)
         self.friends = FriendRepository(conn)
+        self.ai = AIRepository(conn)

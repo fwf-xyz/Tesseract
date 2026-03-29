@@ -12,7 +12,7 @@ class WorkoutRepository:
         with self.conn:
             self.conn.execute(
                 """INSERT INTO workouts (user_id, workout_type, duration, intensity, notes) 
-                VALUES (?, ?, ?, ?, ?, ?)""",
+                VALUES (?, ?, ?, ?, ?)""",
                 (user_id, workout_type, duration, intensity, note)
             )
 

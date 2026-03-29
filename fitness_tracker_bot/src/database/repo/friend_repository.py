@@ -6,10 +6,9 @@ class FriendRepository:
         self.db_path = db_path
 
     def _execute(self, query: str, params: tuple = ()):
-    # Мы не вызываем connect(), а просто берем курсор у существующего соединения
         cursor = self.db_path.cursor() 
         cursor.execute(query, params)
-        self.db_path.commit() # Не забываем коммитить изменения
+        self.db_path.commit()
         return cursor
 
 

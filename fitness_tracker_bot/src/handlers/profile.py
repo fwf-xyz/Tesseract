@@ -54,8 +54,6 @@ async def send_user_consent(message: types.Message, state: FSMContext):
 
 @router.callback_query(ProfileForm.Consent, F.data == 'accept_consent')
 async def get_age(callback: types.CallbackQuery, state: FSMContext):
-    await cleanup(callback.bot, callback.message.chat.id, state)
-
     await send_and_track(state, callback.message,
                         f'{progress_bar(12)}\n\n<b>Укажи свой возраст:</b>',
                         parse_mode='HTML')
