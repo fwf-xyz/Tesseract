@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from states import StatsForm
 
 from services import get_ai_analysis
-from keyboards import get_stats_keyboard, save_ai_summary_keyboard
+from keyboards import get_stats_keyboard, cancel_ai_summary_keyboard
 from utils import safe_delete_messages
 from prompts import build_summary_prompt
 
@@ -94,7 +94,7 @@ async def show_stats(callback: types.CallbackQuery, state: FSMContext, repo: Rep
     text = get_ai_analysis(prompt)
     sent = await callback.message.answer(
         text=f'<blockquote>{text}</blockquote>',
-        reply_markup= None,
+        reply_markup=cancel_ai_summary_keyboard(),
         parse_mode='HTML'
         )
 
