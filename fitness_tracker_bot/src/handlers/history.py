@@ -12,6 +12,8 @@ from keyboards import history_keyboard, edit_history_entry_keyboard, get_workout
 from utils import safe_delete_messages, parse_ru_datetime, progress_bar
 from utils import WorkoutConstants, DateConstants
 
+import asyncio
+
 
 router = Router()
 
@@ -58,22 +60,22 @@ def build_caption(history: list, page: int, days: int) -> str:
     end = start + ITEMS_PER_PAGE
     page_items = history[start:end]
 
-    caption = '<b>История Тренировок \nЗа {} суток:</b>\n'.format(days)
-    caption += '\n<i>(Страница {}/{})</i>\n\n ------------ \n'.format(page + 1, total_pages)
+    caption = '<b>История Тренировок \nЗа {} суток:</b>\n\n'.format(days)
+    if total_pages > 1:
+        caption += '\n<i>(Страница {}/{})</i>\n\n'.format(page + 1, total_pages)
 
     for number, workout in enumerate(page_items, start=start + 1):
         dt = datetime.strptime(workout['created_at'], "%Y-%m-%d %H:%M:%S")
         date_str = "{} {} {:02d}:{:02d}".format(
             dt.day, DateConstants.MONTHS.get(dt.month), dt.hour, dt.minute
         )
-        caption += '<b>{}: {} - {} мин</b>\n<i>[{}]</i>\n<b>Дата:</b> {}\n\n'.format(
+        caption += '<b>{}:</b>\n<blockquote><b>{} - {} мин</b>\n<i>[{}]</i>\n<b>Дата:</b> {}</blockquote>\n\n'.format(
             number,
             WorkoutConstants.TYPES.get(workout['workout_type'], workout['workout_type']),
             str(workout['duration']),
             f'⚡️{workout['intensity']}/{WorkoutConstants.MAX_INTENSITY}',
             date_str,
         )
-    caption += '------------\n'
 
     return caption
 
@@ -112,7 +114,9 @@ async def handle_history_input(message: types.Message, state: FSMContext, repo: 
     history = repo.workouts.get_history(message.from_user.id, days)
 
     if not history:
-        await message.answer('За указанный период нет данных о тренировках.')
+        msg = await message.answer("⚠️ <b>За указанный период нет данных о тренировках</b>", parse_mode='HTML')
+        await asyncio.sleep(5)
+        await msg.delete()
         await state.clear()
         return
 
@@ -299,10 +303,9 @@ async def delete_history_entry(callback: types.CallbackQuery, state: FSMContext,
         await state.update_data(history=history)
     else:
         await state.clear()
-        await callback.message.answer('<b>За указанный период нет данных о тренировках.</b>'
-                                    '\n\n<b>Вернись в меню и выбери другой период для просмотра истории.</b>',
-                                    parse_mode='HTML'
-                                    )
+        text = (f'❌ За указанный период нет данных о тренировках\n\n'
+                f'Вернись в меню и выбери другой период для просмотра истории')
+        await callback.answer(text=text, show_alert=True)
         return
     
     await send_history_message(callback.bot, callback.message.chat.id, state, repo)

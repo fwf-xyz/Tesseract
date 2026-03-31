@@ -11,15 +11,16 @@ from utils import safe_delete_messages, DateConstants, GoalConstants, send_main_
 router = Router()
 
 
-ITEMS_PER_PAGE = 3
+ITEMS_PER_PAGE = 2
 
 def build_goal_caption(history: list, page: int) -> str:
     total_pages = (len(history) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
     start = page * ITEMS_PER_PAGE
     page_items = history[start:start + ITEMS_PER_PAGE]
 
-    caption = '<b>📋 Мои цели:</b>\n'
-    caption += '\n<i>(Страница {}/{})</i>\n\n ------------ \n'.format(page + 1, total_pages)
+    caption = '<b>📋 Мои цели:</b>\n\n'
+    if total_pages > 1:
+        caption += '\n<i>(Страница {}/{})</i>\n\n'.format(page + 1, total_pages)
 
     for number, goal in enumerate(page_items, start=start + 1):
         dt = datetime.strptime(goal['created_at'], "%Y-%m-%d %H:%M:%S")
@@ -28,14 +29,13 @@ def build_goal_caption(history: list, page: int) -> str:
         )
         deadline_str = goal['deadline']
 
-        caption += '<b>{}.</b> <blockquote>🎯 {}</blockquote>\n\n<b>Статус:</b> {}\n\n<b>Добавлена:</b> {}\n<b>⏰ Дедлайн:</b> {}\n\n'.format(
+        caption += '<b>{}.</b> <blockquote>🎯 <b>{}</b>\n\n<b>Статус:</b> {}\n\n<b>Добавлена:</b> {}\n<b>⏰ Дедлайн:</b> {}</blockquote>\n\n'.format(
         number,
         goal['goal'],
         GoalConstants.GOAL_STATUSES.get(goal['status'], goal['status']),
         date_str,
         deadline_str,
         )
-    caption += '------------\n'
     return caption
 
 

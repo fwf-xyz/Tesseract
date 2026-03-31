@@ -1,5 +1,4 @@
 from database import Repository
-from datetime import datetime
 
 
 async def save_user_profile(repo: Repository, user_id: int, data: dict) -> None:

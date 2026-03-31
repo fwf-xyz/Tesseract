@@ -26,6 +26,10 @@ async def confirm_workout_data(message: types.Message, state: FSMContext,
     dt = datetime.now()
 
     photo_id = repo.users.paste_decoration_id('workout_saved')
+
+
+
+    
     caption = build_confirmation_caption(workout_type, duration, 
                                 intensity, note, dt) 
 

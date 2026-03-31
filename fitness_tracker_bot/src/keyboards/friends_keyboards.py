@@ -1,5 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.utils.keyboard import InlineKeyboardBuilder, InlineKeyboardButton
 
 def history_friends_keyboard(
             current_page: int = 0, 
@@ -41,3 +41,10 @@ def close_add_fr_keyboard():
     builder.button(text='◀ Назад', callback_data='close_add_friend')
 
     return builder.as_markup()
+
+
+def friend_request_keyboard(requester_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text='✅ Принять', callback_data=f'accept_friend:{requester_id}'),
+        InlineKeyboardButton(text='❌ Отклонить', callback_data=f'decline_friend:{requester_id}'),
+    ]])

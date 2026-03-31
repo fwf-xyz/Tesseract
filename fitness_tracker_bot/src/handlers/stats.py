@@ -114,3 +114,11 @@ async def cancel_history(callback: types.CallbackQuery, state: FSMContext):
                         data['messages_to_delete'])
     await state.clear()
 
+
+@router.callback_query(F.data == 'math_stats')
+async def set_new_stats_period(callback: types.CallbackQuery, state: FSMContext, repo: Repository):
+
+    text=(f'📅 <b>Укажи другой период статистики в днях:</b> ')
+    await callback.message.answer(text=text, parse_mode='HTML')
+
+    pass

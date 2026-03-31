@@ -14,7 +14,7 @@ def build_confirmation_caption(workout_type: str, duration: int,
         f'<b>Подтверждение Тренировки:</b>\n\n'
         f'🏹 <b>Тип:</b> {workout_type}\n'
         f'⌛ <b>Длительность:</b> {duration} мин\n'
-        f'⚡️ <b>Интенсивность:</b> {intensity}/{WorkoutConstants.MAX_INTENSITY}\n\n'
+        f'<b>Интенсивность:</b> ⚡️{intensity}/{WorkoutConstants.MAX_INTENSITY}\n\n'
         f'<b>Заметка:</b>\n{note or "—"}\n\n'
         f'📅 <b>Дата:</b>\n{date_str}'
     )
@@ -23,7 +23,7 @@ def build_confirmation_caption(workout_type: str, duration: int,
 async def save_workout(repo: Repository, user_id: int, data: dict) -> None:
     repo.workouts.save_workout(
         user_id,
-        data.get('type', 'Unknown'),
+        data.get('workout_type', 'Unknown'),
         data.get('duration', 0),
         data.get('intensity', 'Normal'),
         data.get('note'),
