@@ -14,6 +14,8 @@ from database import Repository
 
 from utils import WorkoutConstants
 
+import asyncio
+
 
 router = Router()
 
@@ -23,10 +25,7 @@ async def start_cmd(callback: types.CallbackQuery, state: FSMContext, repo: Repo
     history = repo.workouts.get_history(callback.from_user.id, 7)
 
     if not history:
-        await callback.message.answer(
-            '<b>За последние 7 дней тренировок нет.</b>',
-            parse_mode='HTML'
-        )
+        await callback.message.answer('<b>За последние 7 дней тренировок нет.</b>', parse_mode='HTML')
         await callback.answer()
         return
 
@@ -45,10 +44,8 @@ async def start_cmd(callback: types.CallbackQuery, state: FSMContext, repo: Repo
     photo_id = repo.users.paste_decoration_id('stats')
     caption = ( 
                 f'<b>🔽 Статистика За 7 Дней</b>\n\n'
-                f'<b>Кол-во тренировок:</b> 🏌️‍♀️{quantity_workouts}\n\n'
-                f'<b>📊Средние значения:</b>\n'
-                f'<b>Интенсивность:</b> ⚡️{avg_intensivity}/{WorkoutConstants.MAX_INTENSITY}\n'
-                f'<b>Длительность:</b> ⏳{avg_workouts_duration} (мин.)'
+                f'<blockquote><b>Кол-во тренировок:</b> 🏌️‍♀️{quantity_workouts}</blockquote>\n\n'
+                f'<blockquote><b>📊Средние значения:</b>\n<b>Интенсивность:</b> ⚡️{avg_intensivity}/{WorkoutConstants.MAX_INTENSITY}\n<b>Длительность:</b> ⏳{avg_workouts_duration} (мин.)</blockquote>'
     )
 
     sent = await callback.message.answer_photo(
@@ -59,12 +56,14 @@ async def start_cmd(callback: types.CallbackQuery, state: FSMContext, repo: Repo
     )
 
     await state.set_state(StatsForm.weekly_stats)
-    await state.update_data(messages_to_delete=[sent.message_id])
+    await state.update_data(messages_to_delete=[sent.message_id],
+                            message_id=sent.message_id,
+                            chat_id=sent.chat.id)
     await callback.answer()
 
 
 
-@router.callback_query(F.data == "ai_summary")
+@router.callback_query(StatsForm.weekly_stats, F.data == "ai_summary")
 async def show_stats(callback: types.CallbackQuery, state: FSMContext, repo: Repository):
     await callback.answer('Генерирую аналитику... ⌛')
 
@@ -80,7 +79,7 @@ async def show_stats(callback: types.CallbackQuery, state: FSMContext, repo: Rep
 
     if not workouts:
         await callback.message.answer(
-            '<b>За период с постановки цели до сегодняшнего дня тренировок нет.</b>\n\nДобавь тренировки, чтобы получить аналитику.',
+            '<b>За период времени с постановки цели до сегодняшнего дня тренировок нет</b>\n\nДобавь тренировки, чтобы получить аналитику',
             parse_mode='HTML'
         )
         return
@@ -115,10 +114,64 @@ async def cancel_history(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@router.callback_query(F.data == 'math_stats')
-async def set_new_stats_period(callback: types.CallbackQuery, state: FSMContext, repo: Repository):
+@router.callback_query(StatsForm.weekly_stats, F.data == 'math_stats')
+async def set_new_stats_period(callback: types.CallbackQuery, state: FSMContext):
 
-    text=(f'📅 <b>Укажи другой период статистики в днях:</b> ')
-    await callback.message.answer(text=text, parse_mode='HTML')
+    text=(f'📅 <b>Укажи период статистики в днях:</b> ')
+    sent = await callback.message.answer(text=text, parse_mode='HTML')
+    
+    await state.update_data(messages_to_delete=[sent.message_id])
+    await state.set_state(StatsForm.another_stats)
 
-    pass
+
+@router.message(StatsForm.another_stats)
+async def handle_new_period(message: types.Message, state: FSMContext, repo: Repository):
+    data = await state.get_data()
+    await safe_delete_messages(message.bot,
+                        message.chat.id,
+                        data['messages_to_delete'])
+    await message.delete()
+
+    if not message.text.isdigit():
+        await message.answer('<b>Введи натуральное число (1, 2, ...):</b>', parse_mode='HTML')
+        return
+    
+    days = int(message.text)
+    history = repo.workouts.get_history(message.from_user.id, days)
+
+    if not history:
+        msg = await message.answer("⚠️ <b>За указанный период нет данных о тренировках</b>", parse_mode='HTML')
+        await asyncio.sleep(5)
+        await msg.delete()
+        await state.clear()
+        return
+
+    quantity_workouts = len(history)
+    avg_intensivity = round(
+        sum(int(row['intensity']) for row in history) / quantity_workouts,
+        1
+    )
+
+    avg_workouts_duration = round(
+        sum(int(row['duration']) for row in history) / quantity_workouts,
+        1
+    )
+
+    caption = ( 
+                f'<b>🔽 Статистика За {days} Суток</b>\n\n'
+                f'<blockquote><b>Кол-во тренировок:</b> 🏌️‍♀️{quantity_workouts}</blockquote>\n\n'
+                f'<blockquote><b>📊Средние значения:</b>\n<b>Интенсивность:</b> ⚡️{avg_intensivity}/{WorkoutConstants.MAX_INTENSITY}\n<b>Длительность:</b> ⏳{avg_workouts_duration} (мин.)</blockquote>'
+    )
+
+    bot = message.bot
+    sent = await bot.edit_message_caption(
+        chat_id=data['chat_id'],
+        message_id=data['message_id'],
+        caption=caption,
+        reply_markup=get_stats_keyboard(),
+        parse_mode='HTML'
+    )
+
+    await state.update_data(messages_to_delete=[sent.message_id])
+    await state.set_state(StatsForm.weekly_stats)
+

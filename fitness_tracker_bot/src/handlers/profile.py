@@ -35,8 +35,7 @@ async def send_and_track(state: FSMContext, message: types.Message, text: str, *
                             # state: FSMContext, repo: Repository
 async def send_user_consent(message: types.Message, state: FSMContext):
     text = (
-        f'{progress_bar(0)}\n\n'
-        f'<b>Данные, которые собирает бот для персональных ИИ-саммари:</b>\n\n'
+        f'{progress_bar(0)}\n\n'  f'<b>Данные, которые собирает бот для персональных ИИ-саммари:</b>\n\n'
         f'<b>👤 Личные:</b>\n'
         f'  • Возраст\n'
         f'  • Пол\n\n'
@@ -46,6 +45,7 @@ async def send_user_consent(message: types.Message, state: FSMContext):
         f'<b>💊 Здоровье и тренировки:</b>\n'
         f'  • Данные о здоровье\n'
         f'  • Личные заметки к тренировкам'
+      
     )
     await send_and_track(state, message, text=text, reply_markup=sent_consent_accept(), parse_mode='HTML')
 
@@ -254,11 +254,14 @@ async def handle_user_profile(callback: types.CallbackQuery, state: FSMContext, 
 
     photo_id = repo.users.paste_decoration_id(data['gender'])
     text = (
-        f'<b>👨‍🦳👵 Возраст:</b> {data.get("age")} лет\n\n'
-        f'<b>Пол:</b> {ProfileConstants.GENDER_TYPES.get(data.get('gender'), data.get('gender'))}\n'
-        f'<b>Рост:</b> {data.get("height")} см\n'
-        f'<b>Вес:</b> {data.get("weight")} кг\n\n'
-        f'<b>➕ Особенности здоровья:</b>\n{data.get("health_params") or "—"}\n\n'
+        f'👤 <b>Твой персональный профиль:</b>\n\n'
+        f'<blockquote>'
+        f'🎂 <b>Возраст:</b> {data.get("age")} лет\n'
+        f'⚧ <b>Пол:</b> {ProfileConstants.GENDER_TYPES.get(data.get("gender"), data.get("gender"))}\n'
+        f'📏 <b>Рост:</b> {data.get("height")} см\n'
+        f'⚖️ <b>Вес:</b> {data.get("weight")} кг'
+        f'</blockquote>\n\n'
+        f'🩺 <b>Особенности здоровья:</b>\n{data.get("health_params") or "—"}\n\n'
     )
 
     sent = await callback.message.answer_photo(photo=photo_id , caption=text, reply_markup=view_user_profile(), parse_mode='HTML')

@@ -40,6 +40,21 @@ def parse_ru_datetime(text: str) -> str | None:
         return None
     
 
+def format_ru_date(date_str: str) -> str | None:
+    try:
+        fmt = '%Y-%m-%d %H:%M:%S' if len(date_str) > 10 else '%Y-%m-%d'
+        dt = datetime.strptime(date_str.strip(), fmt)
+
+        month_name = DateConstants.MONTHS.get(dt.month)
+        if not month_name:
+            return None
+
+        return f'{dt.day} {month_name} {dt.year}'
+
+    except (ValueError, AttributeError):
+        return None
+    
+
 def progress_bar(percent: int) -> str:
     filled = percent // 10
     empty = 10 - filled

@@ -34,7 +34,8 @@ async def download_and_transcribe(bot, file_id: str, message: Message) -> str | 
         os.unlink(tmp_path)
 
 
-async def _process_audio(message: Message, bot, file_id: str, state: FSMContext, repo: Repository) -> None:
+async def process_audio(message: Message, bot, file_id: str,
+                            state: FSMContext, repo: Repository) -> None:
     status = await message.reply("🎙 Распознаю речь...")
 
     raw_text = await download_and_transcribe(bot, file_id, message)
@@ -66,23 +67,10 @@ async def _process_audio(message: Message, bot, file_id: str, state: FSMContext,
     )
 
 
-@router.message(WorkoutForm.type, F.voice)
-async def handle_audio(message: Message, bot, state: FSMContext, repo: Repository) -> None:
-    await _process_audio(message, bot, message.voice.file_id, state, repo)
-
-    await message.delete()
-    await state.set_state(WorkoutForm.verify)
-
-
-async def confirm_workout_from_voice(
-    message: Message,
-    workout_type: str,
-    duration: int,
-    intensity: int | None,
-    note: str | None,
-    state: FSMContext,
-    repo: Repository,
-) -> None:
+async def confirm_workout_from_voice(message: Message, workout_type: str,
+                                        duration: int, intensity: int | None,
+                                            note: str | None, state: FSMContext,
+                                                repo: Repository) -> None:
     dt = datetime.now()
     display_type = WorkoutConstants.TYPES.get(workout_type, "Unknown")
     photo_id = repo.users.paste_decoration_id("workout_saved")

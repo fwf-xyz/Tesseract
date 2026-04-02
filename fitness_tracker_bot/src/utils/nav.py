@@ -2,6 +2,8 @@ from aiogram.types import Message
 from aiogram import types
 from keyboards import get_main_menu_keyboard   
 
+from utils import format_ru_date
+
 from database import Repository
 
 from aiogram.exceptions import TelegramBadRequest
@@ -21,7 +23,16 @@ async def send_main_menu(event: types.Message | types.CallbackQuery,
 
     photo_id = repo.users.paste_decoration_id(f'menu_{user_gender}')
     goal_data = repo.goals.get_latest_goal(user_id)
-    caption = f'<b>🎯 Цель:</b> <blockquote>{goal_data["goal"]}</blockquote>\n\n<b>🚨 Дедлайн:</b>\n{goal_data["deadline"]}'
+
+    goal_created_at = format_ru_date(goal_data["created_at"])
+    goal_deadline = format_ru_date(goal_data["deadline"])
+
+    caption = (
+        f'🎯 <b>Цель:</b>\n'
+        f'<blockquote>{goal_data["goal"]}</blockquote>\n\n'
+        f'📅 <b>Поставлена:</b> {goal_created_at}\n'
+        f'🔥 <b>Достичь до:</b> {goal_deadline}'
+    )
     await message.answer_photo(
         photo=photo_id,
         caption=caption,

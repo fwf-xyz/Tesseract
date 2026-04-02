@@ -33,3 +33,12 @@ def skip_note_keyboard():
     ))
 
     return builder.as_markup()
+
+
+def close_add_workout():
+    builder = InlineKeyboardBuilder()
+
+    builder.add(InlineKeyboardButton(text='× Отмена', callback_data='cancel_add_workout'))
+
+    return builder.as_markup()
+

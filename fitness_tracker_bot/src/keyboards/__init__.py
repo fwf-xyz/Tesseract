@@ -1,5 +1,5 @@
 from .main_menu import get_main_reply_keyboard, get_main_menu_keyboard
-from .workout_keyboards import get_workout_type_keyboard, verify_workout_keyboard, skip_note_keyboard
+from .workout_keyboards import get_workout_type_keyboard, verify_workout_keyboard, skip_note_keyboard, close_add_workout
 from .history_keyboards import history_keyboard, edit_history_entry_keyboard
 from .stats_keyboards import get_stats_keyboard, cancel_ai_summary_keyboard
 from .help_keyboards import get_help_keyboard

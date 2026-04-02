@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from database import Repository
 from states import GoalHistoryForm, ChangeGoalForm
 from keyboards import history_goals_keyboard, set_goal_status_keyboard, verify_new_goal_keyboard
-from utils import safe_delete_messages, DateConstants, GoalConstants, send_main_menu
+from utils import safe_delete_messages, DateConstants, GoalConstants, send_main_menu, format_ru_date
 
 router = Router()
 
@@ -27,14 +27,16 @@ def build_goal_caption(history: list, page: int) -> str:
         date_str = "{} {} {:02d}:{:02d}".format(
             dt.day, DateConstants.MONTHS.get(dt.month), dt.hour, dt.minute
         )
-        deadline_str = goal['deadline']
 
-        caption += '<b>{}.</b> <blockquote>🎯 <b>{}</b>\n\n<b>Статус:</b> {}\n\n<b>Добавлена:</b> {}\n<b>⏰ Дедлайн:</b> {}</blockquote>\n\n'.format(
-        number,
-        goal['goal'],
-        GoalConstants.GOAL_STATUSES.get(goal['status'], goal['status']),
-        date_str,
-        deadline_str,
+        deadline_str = format_ru_date(goal["deadline"])
+
+        caption += (
+                f'<b>{number}.</b> 🎯 <b>{goal["goal"]}</b>\n'
+                f'<blockquote>'
+                f'<b>Статус:</b>\n{GoalConstants.GOAL_STATUSES.get(goal["status"], goal["status"])}\n'
+                f'📅 <b>Добавлена:</b> {date_str}\n'
+                f'🔥 <b>Достичь до:</b> {deadline_str}'
+                f'</blockquote>\n\n'
         )
     return caption
 
@@ -166,11 +168,14 @@ async def change_goal_handler(callback: types.CallbackQuery, state: FSMContext, 
 
     goal_data = repo.goals.get_latest_goal(callback.from_user.id)
 
+    goal_created_at = format_ru_date(goal_data["created_at"])
+    goal_deadline = format_ru_date(goal_data["deadline"])
+
     text = (
         f'<b>Обнови статус для действующей цели:</b> \n\n'
         f'<blockquote>🎯 {goal_data["goal"]}</blockquote>\n\n'
-        f'<b>Добавлена:</b> {goal_data["created_at"]}\n'
-        f'<b>⏰ Дедлайн:</b> {goal_data["deadline"]}'
+        f'<b>Добавлена:</b> {goal_created_at}\n'
+        f'<b>⏰ Дедлайн:</b> {goal_deadline}'
     )
     sent = await callback.message.answer(text=text, reply_markup=set_goal_status_keyboard(), parse_mode='HTML')
 

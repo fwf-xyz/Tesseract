@@ -1,70 +1,115 @@
-# from datetime import datetime
+from datetime import datetime
 
 from aiogram import types, F, Router
-# from aiogram.fsm.context import FSMContext
+from aiogram.fsm.context import FSMContext
+from aiogram.filters import CommandStart, CommandObject
+from aiogram.utils.deep_linking import decode_payload
 
-# from database import Repository
-# from states import FriendsHistoryForm
-# from keyboards import history_friends_keyboard, close_add_fr_keyboard, friend_request_keyboard
-# from utils import safe_delete_messages
-# from services import get_invite_link
+from database import Repository
+from states import FriendsHistoryForm
+from keyboards import history_friends_keyboard, close_add_fr_keyboard, friend_request_keyboard
+from utils import safe_delete_messages
+from services import get_invite_link
 
 router = Router()
 
 
-# ITEMS_PER_PAGE = 10
+ITEMS_PER_PAGE = 10
 
 
-# def build_friends_caption(history: list, page: int) -> str:
-#     total_pages = (len(history) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
-#     start = page * ITEMS_PER_PAGE
-#     page_items = history[start:start + ITEMS_PER_PAGE]
+def build_friends_caption(history: list, page: int) -> str:
+    total_pages = (len(history) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
+    start = page * ITEMS_PER_PAGE
+    page_items = history[start:start + ITEMS_PER_PAGE]
 
-#     caption = '<b>🦎 Список друзей:</b>\n'
-#     caption += '\n<i>(Страница {}/{})</i>\n\n ------------ \n'.format(page + 1, total_pages)
+    caption = '<b>🦎 Список друзей:</b>\n'
+    caption += '\n<i>(Страница {}/{})</i>\n\n ------------ \n'.format(page + 1, total_pages)
 
-#     for number, friend in enumerate(page_items, start=start + 1):
-#         dt = datetime.strptime(friend['joined_at'], "%Y-%m-%d %H:%M:%S")
-#         date_str = "{:02d}.{:02d}.{} {:02d}:{:02d}".format(
-#             dt.day, dt.month, dt.year, dt.hour, dt.minute
-#         )
-#         caption += '<b>{}.</b> <blockquote>👤 {}</blockquote>\n\n<b>Присоединился:</b> {}\n\n'.format(
-#             number,
-#             friend.get('username'),
-#             date_str,
-#         )
-#     caption += '------------\n'
-#     return caption
-
-
-# async def send_friends_message(bot, chat_id: int, state: FSMContext, repo: Repository):
-#     data = await state.get_data()
-#     history = data['history']
-#     current_page = data.get('current_page', 0)
-#     total_pages = (len(history) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
-
-#     caption = build_friends_caption(history, page=current_page)
-#     photo_id = repo.users.paste_decoration_id('friends')
-
-#     sent = await bot.send_photo(
-#         chat_id=chat_id,
-#         photo=photo_id,
-#         caption=caption,
-#         reply_markup=history_friends_keyboard(current_page=current_page, total_pages=total_pages),
-#         parse_mode='HTML',
-#     )
-#     await state.update_data(
-#         messages_to_delete=[sent.message_id],
-#         friends_photo_message_id=sent.message_id,
-#     )
-#     return sent
+    for number, friend in enumerate(page_items, start=start + 1):
+        dt = datetime.strptime(friend['joined_at'], "%Y-%m-%d %H:%M:%S")
+        date_str = "{:02d}.{:02d}.{} {:02d}:{:02d}".format(
+            dt.day, dt.month, dt.year, dt.hour, dt.minute
+        )
+        caption += '<b>{}.</b> <blockquote>👤 {}</blockquote>\n\n<b>Присоединился:</b> {}\n\n'.format(
+            number,
+            friend.get('username'),
+            date_str,
+        )
+    caption += '------------\n'
+    return caption
 
 
-# # ─────────────────────────────────────────────
-# #  Deep-link: /start friend_<inviter_id>
-# #  Срабатывает когда новый пользователь
-# #  переходит по реферальной ссылке друга
-# # ─────────────────────────────────────────────
+async def send_friends_message(bot, chat_id: int, state: FSMContext, repo: Repository):
+    data = await state.get_data()
+    history = data['history']
+    current_page = data.get('current_page', 0)
+    total_pages = (len(history) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
+
+    caption = build_friends_caption(history, page=current_page)
+    photo_id = repo.users.paste_decoration_id('friends')
+
+    sent = await bot.send_photo(
+        chat_id=chat_id,
+        photo=photo_id,
+        caption=caption,
+        reply_markup=history_friends_keyboard(current_page=current_page, total_pages=total_pages),
+        parse_mode='HTML',
+    )
+    await state.update_data(
+        messages_to_delete=[sent.message_id],
+        friends_photo_message_id=sent.message_id,
+    )
+    return sent
+
+
+@router.message(CommandStart(deep_link=True))
+async def handle_deep_link(message: types.Message, command: CommandObject):
+    encoded_args = command.args
+    
+    try:
+        # Расшифровываем payload обратно в "add_123456789"
+        decoded_payload = decode_payload(encoded_args)
+        
+        # Проверяем, правильный ли это формат
+        if decoded_payload.startswith("add_"):
+            # Достаем ID пользователя, который пригласил
+            inviter_id = int(decoded_payload.split("_")[1])
+            
+            # Здесь ваша логика (например, запись в БД)
+            if message.from_user.id == inviter_id:
+                await message.answer("Вы перешли по своей собственной ссылке!")
+            else:
+                await message.answer(f"Вы перешли по ссылке от пользователя с ID: {inviter_id}")
+                
+        else:
+            await message.answer("Неизвестный тип приглашения.")
+            
+    except Exception as e:
+        # На случай, если кто-то передал битый или неправильный payload
+        await message.answer("Ссылка недействительна или повреждена.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # @router.message(F.text.regexp(r'^/start friend_(\d+)$'))
 # async def handle_friend_deeplink(message: types.Message, repo: Repository):
@@ -186,50 +231,50 @@ router = Router()
 # #  Закрытие меню "Добавить друга"
 # # ─────────────────────────────────────────────
 
-# @router.callback_query(FriendsHistoryForm.viewing, F.data == 'close_add_friend')
-# async def close_add_friend_handler(callback: types.CallbackQuery, state: FSMContext):
-#     data = await state.get_data()
+@router.callback_query(FriendsHistoryForm.viewing, F.data == 'close_add_friend')
+async def close_add_friend_handler(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
 
-#     await safe_delete_messages(callback.bot, callback.message.chat.id, data.get('messages_to_delete', []))
-#     await safe_delete_messages(callback.bot, callback.message.chat.id, data.get('add_friend_message_id', []))
+    await safe_delete_messages(callback.bot, callback.message.chat.id, data.get('messages_to_delete', []))
+    await safe_delete_messages(callback.bot, callback.message.chat.id, data.get('add_friend_message_id', []))
 
-#     await callback.answer()
-
-
-# @router.callback_query(FriendsHistoryForm.viewing, F.data == 'close_friends')
-# async def close_friends_handler(callback: types.CallbackQuery, state: FSMContext):
-#     data = await state.get_data()
-
-#     await safe_delete_messages(callback.bot, callback.message.chat.id, data.get('messages_to_delete', []))
-
-#     await state.clear()
-#     await callback.answer()
+    await callback.answer()
 
 
-# @router.callback_query(F.data == 'friends')
-# async def show_friends(callback: types.CallbackQuery, state: FSMContext, repo: Repository):
-#     history = repo.friends.get_friends_list(callback.from_user.id)
+@router.callback_query(FriendsHistoryForm.viewing, F.data == 'close_friends')
+async def close_friends_handler(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
 
-#     if not history:
-#         photo_id = repo.users.paste_decoration_id('friends')
-#         caption = (
-#             f'<b>🦎 Список друзей:</b>\n\n'
-#             f'<blockquote>Список друзей на данный момент пуст</blockquote>\n\n'
-#             f'Ты можешь использовать функцию: <b>"➕ Добавить друга"</b>, чтобы здесь появились твои первые друзья!'
-#         )
-#         sent = await callback.message.answer_photo(
-#             photo=photo_id, caption=caption,
-#             reply_markup=history_friends_keyboard(), parse_mode='HTML'
-#         )
-#         await state.update_data(messages_to_delete=[sent.message_id])
-#         await state.set_state(FriendsHistoryForm.viewing)
-#         await callback.answer()
-#         return
+    await safe_delete_messages(callback.bot, callback.message.chat.id, data.get('messages_to_delete', []))
 
-#     await state.update_data(history=history, current_page=0)
-#     await send_friends_message(callback.bot, callback.message.chat.id, state, repo)
-#     await state.set_state(FriendsHistoryForm.viewing)
-#     await callback.answer()
+    await state.clear()
+    await callback.answer()
+
+
+@router.callback_query(F.data == 'friends')
+async def show_friends(callback: types.CallbackQuery, state: FSMContext, repo: Repository):
+    history = repo.friends.get_friends_list(callback.from_user.id)
+
+    if not history:
+        photo_id = repo.users.paste_decoration_id('friends')
+        caption = (
+            f'<b>🦎 Список друзей:</b>\n\n'
+            f'<blockquote>Список друзей на данный момент пуст</blockquote>\n\n'
+            f'Ты можешь использовать функцию: <b>"➕ Добавить друга"</b>, чтобы здесь появились твои первые друзья!'
+        )
+        sent = await callback.message.answer_photo(
+            photo=photo_id, caption=caption,
+            reply_markup=history_friends_keyboard(), parse_mode='HTML'
+        )
+        await state.update_data(messages_to_delete=[sent.message_id])
+        await state.set_state(FriendsHistoryForm.viewing)
+        await callback.answer()
+        return
+
+    await state.update_data(history=history, current_page=0)
+    await send_friends_message(callback.bot, callback.message.chat.id, state, repo)
+    await state.set_state(FriendsHistoryForm.viewing)
+    await callback.answer()
 
 
 # @router.callback_query(FriendsHistoryForm.viewing, F.data.startswith('page_friends:'))
@@ -308,21 +353,21 @@ router = Router()
 #     await state.update_data(messages_to_delete=[sent.message_id])
 
 
-# @router.callback_query(FriendsHistoryForm.viewing, F.data == 'add_friend')
-# async def handle_add_friend(callback: types.CallbackQuery, state: FSMContext):
-#     friend_link = await get_invite_link(callback.bot, callback.from_user.id)
+@router.callback_query(FriendsHistoryForm.viewing, F.data == 'add_friend')
+async def handle_add_friend(callback: types.CallbackQuery, state: FSMContext):
+    friend_link = await get_invite_link(callback.bot, callback.from_user.id)
 
-#     text = (
-#         f'<b>🦎 Добавление друзей:</b>\n\n'
-#         f'<blockquote>Отправь эту ссылку будущему другу. Когда он перейдёт по ней, ты получишь <b>уведомление</b> и сможешь подтвердить добавление в друзья!</blockquote>\n\n'
-#         f'🔗 <b>Твоя ссылка для дружбы:</b>\n'
-#         f'<code>{friend_link}</code>\n\n'
-#         f'<i>(Нажми на ссылку, чтобы скопировать)</i>'
-#     )
-#     sent = await callback.message.answer(
-#         text=text,
-#         reply_markup=close_add_fr_keyboard(),
-#         parse_mode='HTML'
-#     )
-#     await state.update_data(add_friend_message_id=sent.message_id)
-#     await callback.answer()
+    text = (
+        f'<b>🦎 Добавление друзей:</b>\n\n'
+        f'<blockquote>Отправь эту ссылку будущему другу. Когда он перейдёт по ней, ты получишь <b>уведомление</b> и сможешь подтвердить добавление в друзья!</blockquote>\n\n'
+        f'🔗 <b>Твоя ссылка для дружбы:</b>\n'
+        f'<code>{friend_link}</code>\n\n'
+        f'<i>(Нажми на ссылку, чтобы скопировать)</i>'
+    )
+    sent = await callback.message.answer(
+        text=text,
+        reply_markup=close_add_fr_keyboard(),
+        parse_mode='HTML'
+    )
+    await state.update_data(add_friend_message_id=sent.message_id)
+    await callback.answer()
