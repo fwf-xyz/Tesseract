@@ -13,6 +13,7 @@ from utils import safe_delete_messages, parse_ru_datetime, progress_bar
 from utils import WorkoutConstants, DateConstants
 
 import asyncio
+from html import escape
 
 
 router = Router()
@@ -60,27 +61,31 @@ def build_caption(history: list, page: int, days: int) -> str:
     end = start + ITEMS_PER_PAGE
     page_items = history[start:end]
 
-    caption = '<b>История Тренировок \nЗа {} суток:</b>\n\n'.format(days)
+    caption = f'<b>История Тренировок \nЗа {days} суток:</b>\n\n'
+
     if total_pages > 1:
-        caption += '\n<i>(Страница {}/{})</i>\n\n'.format(page + 1, total_pages)
+        caption += f'<i>(Страница {page + 1}/{total_pages})</i>\n\n'
 
     for number, workout in enumerate(page_items, start=start + 1):
         dt = datetime.strptime(workout['created_at'], "%Y-%m-%d %H:%M:%S")
-        date_str = "{} {} {:02d}:{:02d}".format(
-            dt.day, DateConstants.MONTHS.get(dt.month), dt.hour, dt.minute
-        )
-        caption += '<b>{}:</b>\n<blockquote><b>{} - {} мин</b>\n<i>[{}]</i>\n<b>Дата:</b> {}</blockquote>\n\n'.format(
-            number,
-            WorkoutConstants.TYPES.get(workout['workout_type'], workout['workout_type']),
-            str(workout['duration']),
-            f'⚡️{workout['intensity']}/{WorkoutConstants.MAX_INTENSITY}',
-            date_str,
+        date_str = f"{dt.day} {DateConstants.MONTHS.get(dt.month)} {dt.hour:02d}:{dt.minute:02d}"
+
+        workout_type = escape(WorkoutConstants.TYPES.get(workout['workout_type'], workout['workout_type']))
+        duration = escape(str(workout['duration']))
+        intensity = f"⚡️{escape(str(workout['intensity']))}/{escape(str(WorkoutConstants.MAX_INTENSITY))}"
+
+        caption += (
+            f'<b>{number}:</b> {workout_type} - {duration} мин\n'
+            f'<blockquote>'
+            f'<i>[{intensity}]</i>\n'
+            f'<b>Дата:</b> {date_str}'
+            f'</blockquote>\n\n'
         )
 
     return caption
 
 
-@router.callback_query(F.data == 'close_history')
+@router.callback_query(WorkoutHistoryForm.viewing, F.data == 'close_history')
 async def cancel_history(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
 
@@ -216,6 +221,10 @@ async def start_edit_choice(callback: types.CallbackQuery, state: FSMContext):
     page = data['current_page']
     start_idx = page * ITEMS_PER_PAGE
     end_idx = start_idx + ITEMS_PER_PAGE
+
+    history = data['history']
+    if end_idx >= len(history):
+        end_idx = len(history)
 
     sent = await callback.message.answer(
         f"📝<b>Номер записи для редактирования ({start_idx + 1}-{end_idx}):</b>",

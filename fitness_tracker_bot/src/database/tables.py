@@ -1,7 +1,7 @@
 CREATE_USERS_TABLE = """
 CREATE TABLE IF NOT EXISTS users (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id     INTEGER PRIMARY KEY,
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL,
     username    TEXT,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     consent_version TEXT NOT NULL DEFAULT '1.0'
@@ -41,9 +41,8 @@ CREATE TABLE IF NOT EXISTS friends (
     receiver_id              INTEGER NOT NULL,
     status                   TEXT    NOT NULL DEFAULT 'pending'
                                 CHECK(status IN ('pending', 'accepted', 'declined')),
-    notification_message_id  INTEGER DEFAULT NULL,
+    notification_status  INTEGER DEFAULT 1,
     created_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (requester_id, receiver_id),
     FOREIGN KEY (requester_id) REFERENCES users(user_id),
     FOREIGN KEY (receiver_id)  REFERENCES users(user_id)

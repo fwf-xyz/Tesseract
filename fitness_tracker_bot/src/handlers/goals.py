@@ -20,7 +20,7 @@ def build_goal_caption(history: list, page: int) -> str:
 
     caption = '<b>📋 Мои цели:</b>\n\n'
     if total_pages > 1:
-        caption += '\n<i>(Страница {}/{})</i>\n\n'.format(page + 1, total_pages)
+        caption += '<i>(Страница {}/{})</i>\n\n'.format(page + 1, total_pages)
 
     for number, goal in enumerate(page_items, start=start + 1):
         dt = datetime.strptime(goal['created_at'], "%Y-%m-%d %H:%M:%S")

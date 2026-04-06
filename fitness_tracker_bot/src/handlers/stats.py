@@ -25,7 +25,15 @@ async def start_cmd(callback: types.CallbackQuery, state: FSMContext, repo: Repo
     history = repo.workouts.get_history(callback.from_user.id, 7)
 
     if not history:
-        await callback.message.answer('<b>За последние 7 дней тренировок нет.</b>', parse_mode='HTML')
+        text = (f'🥇 <b>Мотивационное ограничение:</b>\n'
+                f'<blockquote>'
+                f'Доступ к периодам статистики с ИИ-саммари открыт, если пользователь добавил хотя бы 1 тренировку за последнюю неделю'
+                f'</blockquote>\n\n'
+                f'<b>❌ За последние 7 дней тренировок нет</b>'
+        )
+        msg = await callback.message.answer(text=text, parse_mode='HTML')
+        await asyncio.sleep(14)
+        await msg.delete()
         await callback.answer()
         return
 
@@ -90,7 +98,7 @@ async def show_stats(callback: types.CallbackQuery, state: FSMContext, repo: Rep
     prompt = build_summary_prompt(profile, goal, workouts, past_summaries)
     print(prompt)
 
-    text = get_ai_analysis(prompt)
+    text = await get_ai_analysis(prompt)
     sent = await callback.message.answer(
         text=f'<blockquote>{text}</blockquote>',
         reply_markup=cancel_ai_summary_keyboard(),

@@ -29,6 +29,7 @@ class WorkoutRepository:
             (user_id, since)
         ).fetchall()
     
+    
     def delete_entry(self, entry_id: int) -> None:
         with self.conn:
             self.conn.execute(

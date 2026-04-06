@@ -45,8 +45,8 @@ async def send_user_consent(message: types.Message, state: FSMContext):
         f'<b>💊 Здоровье и тренировки:</b>\n'
         f'  • Данные о здоровье\n'
         f'  • Личные заметки к тренировкам'
-      
     )
+
     await send_and_track(state, message, text=text, reply_markup=sent_consent_accept(), parse_mode='HTML')
 
 
@@ -236,7 +236,7 @@ async def cancel_save_profile(callback: types.CallbackQuery, state: FSMContext):
 
     await safe_delete_messages(callback.bot, callback.message.chat.id, data['messages_to_delete'])
 
-    await callback.message.answer('<b>Чтобы заново создать персональный профиль напиши команду: /start</b> \n\n<blockquote>После регистрации ты сможешь редактировать персональный профиль во вкладке: "🌌 Персональный профиль"</blockquote>', parse_mode='HTML')
+    await callback.message.answer('<b>Чтобы заново создать персональный профиль напиши команду: /start</b> \n\n<blockquote>После регистрации ты сможешь редактировать профиль во вкладке: "🌌 Профиль пользователя"</blockquote>', parse_mode='HTML')
 
     await state.clear()
     await callback.answer('❌ Создание персонального профиля было отменено')
@@ -254,7 +254,7 @@ async def handle_user_profile(callback: types.CallbackQuery, state: FSMContext, 
 
     photo_id = repo.users.paste_decoration_id(data['gender'])
     text = (
-        f'👤 <b>Твой персональный профиль:</b>\n\n'
+        f'<b>Профиль пользователя:</b>\n\n'
         f'<blockquote>'
         f'🎂 <b>Возраст:</b> {data.get("age")} лет\n'
         f'⚧ <b>Пол:</b> {ProfileConstants.GENDER_TYPES.get(data.get("gender"), data.get("gender"))}\n'

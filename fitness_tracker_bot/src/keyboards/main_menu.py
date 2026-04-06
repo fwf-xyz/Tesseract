@@ -21,7 +21,7 @@ def get_main_menu_keyboard():
     
     builder.add(InlineKeyboardButton(text="💪 Добавить тренировку",callback_data="add_workout"))
 
-    builder.add(InlineKeyboardButton(text="🌌 Персональный профиль", callback_data="user_profile"))
+    builder.add(InlineKeyboardButton(text="🌌 Профиль пользователя", callback_data="user_profile"))
     
     builder.add(InlineKeyboardButton(text="📜 История", callback_data="history"))
     builder.add(InlineKeyboardButton(text="📈 Статистика", callback_data="stats"))

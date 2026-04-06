@@ -25,7 +25,7 @@ async def add_workout(callback: types.CallbackQuery, state: FSMContext, repo: Re
     photo_id = repo.users.paste_decoration_id('info_message')
     text = (
         f"<b>Добавление Тренировки:</b>\n\n"
-        f"<blockquote>📝 🎙 <b>Отправь голосовое или текстовое сообщение с:</b>\n"
+        f"<blockquote>📝 🎙 <b>Отправь голосовое ИЛИ текстовое сообщение с:</b>\n"
         f"— типом тренировки (силовая/кардио/растяжка)\n"
         f"— длительностью (от {WorkoutConstants.MIN_DURATION} до {WorkoutConstants.MAX_DURATION} минут)\n"
         f"— интенсивностью (от {WorkoutConstants.MIN_INTENSITY} до {WorkoutConstants.MAX_INTENSITY})</blockquote>"

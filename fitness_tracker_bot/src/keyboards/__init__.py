@@ -5,4 +5,4 @@ from .stats_keyboards import get_stats_keyboard, cancel_ai_summary_keyboard
 from .help_keyboards import get_help_keyboard
 from .profile_keyboards import sent_consent_accept, gender_keyboard, skip_health_params, verify_profile_keyboard, view_user_profile
 from .goals_keyboards import history_goals_keyboard, set_goal_status_keyboard, verify_new_goal_keyboard
-from .friends_keyboards import history_friends_keyboard, close_add_fr_keyboard, friend_request_keyboard
+from .friends_keyboards import history_friends_keyboard, close_add_fr_keyboard, verify_request_friend, edit_friend_settings_keyboard

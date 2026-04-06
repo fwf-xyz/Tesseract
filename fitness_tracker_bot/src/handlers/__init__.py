@@ -6,11 +6,11 @@ router = Router()
 router.include_routers(
                         start.router,
                         menu.router,
+                        friends.router,
                         workout.router,
                         goals.router,
                         history.router,
                         stats.router,
-                        friends.router,
                         get_design_id.router,
                         profile.router,
                         errors.router,

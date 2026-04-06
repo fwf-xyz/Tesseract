@@ -11,9 +11,8 @@ def get_connection() -> sqlite3.Connection:
     return conn
 
 
-def init_db():
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        for query in ALL_TABLES:
-            cursor.execute(query)
-        conn.commit()
+def init_db(conn: sqlite3.Connection) -> None:
+    cursor = conn.cursor()
+    for query in ALL_TABLES:
+        cursor.execute(query)
+    conn.commit()

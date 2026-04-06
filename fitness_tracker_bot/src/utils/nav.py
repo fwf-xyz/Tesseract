@@ -1,4 +1,3 @@
-from aiogram.types import Message
 from aiogram import types
 from keyboards import get_main_menu_keyboard   
 
@@ -7,6 +6,7 @@ from utils import format_ru_date
 from database import Repository
 
 from aiogram.exceptions import TelegramBadRequest
+
 
 async def send_main_menu(event: types.Message | types.CallbackQuery,
                         repo: Repository, user_id: int) -> None:
@@ -26,13 +26,25 @@ async def send_main_menu(event: types.Message | types.CallbackQuery,
 
     goal_created_at = format_ru_date(goal_data["created_at"])
     goal_deadline = format_ru_date(goal_data["deadline"])
+    goal_status = goal_data["status"]
 
-    caption = (
+    if goal_status == 'overdue':
+        caption = (
         f'🎯 <b>Цель:</b>\n'
         f'<blockquote>{goal_data["goal"]}</blockquote>\n\n'
         f'📅 <b>Поставлена:</b> {goal_created_at}\n'
-        f'🔥 <b>Достичь до:</b> {goal_deadline}'
+        f'🔥 <b>Достичь до:</b> {goal_deadline}\n\n'
+        f'<blockquote>⏰ Дедлайн просрочен</blockquote>'
     )
+    
+    else: 
+        caption = (
+            f'🎯 <b>Цель:</b>\n'
+            f'<blockquote>{goal_data["goal"]}</blockquote>\n\n'
+            f'📅 <b>Поставлена:</b> {goal_created_at}\n'
+            f'🔥 <b>Достичь до:</b> {goal_deadline}'
+        )
+
     await message.answer_photo(
         photo=photo_id,
         caption=caption,

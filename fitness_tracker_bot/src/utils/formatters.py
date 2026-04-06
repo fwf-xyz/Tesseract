@@ -56,7 +56,14 @@ def format_ru_date(date_str: str) -> str | None:
     
 
 def progress_bar(percent: int) -> str:
+    total = 10
     filled = percent // 10
-    empty = 10 - filled
-    bar = '█' * filled + '░' * empty
-    return f'[{bar}] {percent}%'
+    empty = total - filled - 1
+
+    if percent >= 100:
+        bar = '█' * total + ' ✅'
+    else:
+        bar = '█' * filled + '🏃‍♀️‍➡️' + '░' * empty + '🚩'
+        bar = f'{bar} {percent}%'
+
+    return bar

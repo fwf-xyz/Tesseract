@@ -46,7 +46,8 @@ class GoalConstants:
         "in_progress": '⚡️ В процессе выполнения',
         "completed":  '🟢 Выполнена',
         "failed":   '🔴 НЕ выполнена',
-        "partially_completed": '🟠 Выполнена частично'
+        "partially_completed": '🟠 Выполнена частично',
+        "overdue": '⏰ Просрочена',
     }
 
 

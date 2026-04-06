@@ -1,4 +1,5 @@
 import sqlite3
+from typing import Optional
 
 class UserRepository:
     def __init__(self, conn: sqlite3.Connection):
@@ -45,3 +46,17 @@ class UserRepository:
         result = cursor.fetchone()
 
         return result[0] if result else None
+    
+
+    def get_user(self, user_id: int) -> Optional[dict]:
+        cursor = self.conn.cursor()
+    
+        row = cursor.execute("""
+            SELECT username, created_at, consent_version
+            FROM users
+            WHERE user_id = ?""",
+            (user_id,)
+        ).fetchone()
+    
+        return dict(row) if row else None
+

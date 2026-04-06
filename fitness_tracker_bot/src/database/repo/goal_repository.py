@@ -54,3 +54,28 @@ class GoalRepository:
             """,
                 (new_status, completed_at, user_id)
             )
+
+    def get_overdue_goals(self, now: str) -> list[tuple]:
+        return self.conn.execute(
+            """
+            SELECT id, user_id, goal, deadline, created_at
+            FROM goals
+            WHERE deadline <= ?
+            AND status = 'in_progress'
+            """,
+            (now,)
+        ).fetchall()
+
+
+    def set_overdue_goal_statys(self, goal_id: int) -> None:
+        with self.conn:
+            self.conn.execute(
+                """
+                UPDATE goals
+                SET status = 'overdue'
+                WHERE id = ?
+                """,
+                (goal_id,)
+            )
+
+

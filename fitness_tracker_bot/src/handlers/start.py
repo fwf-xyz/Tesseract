@@ -2,6 +2,7 @@ from aiogram import Router, types
 from aiogram.filters import CommandStart
 from aiogram.filters.command import CommandObject
 from aiogram.utils.deep_linking import decode_payload
+from aiogram.exceptions import TelegramBadRequest
 
 from aiogram.fsm.context import FSMContext
 from states import ProfileForm
@@ -17,22 +18,48 @@ from services import handle_friend_invite
 router = Router()
 
 
-@router.message(CommandStart())
+@router.message(CommandStart(deep_link=True))
 async def start_cmd(message: types.Message,
                     command: CommandObject,
                     state: FSMContext,
                     repo: Repository):
-    user_id = message.from_user.id
-    username = message.from_user.username
+    try:
+        await message.delete()
+    except TelegramBadRequest:
+        pass
 
-    inviter_id = None
-    if command.args:
-        try:
-            decoded = decode_payload(command.args)
-        except Exception:
-            decoded = command.args
+    user_id = message.from_user.id
+
+    if repo.users.exists_user(user_id):
+        inviter_id = None
+        if command.args:
+            try:
+                decoded = decode_payload(command.args)
+            except Exception:
+                decoded = command.args
         if decoded.startswith("add_"):
             inviter_id = int(decoded.split("_")[1])
+
+        if inviter_id:
+            await handle_friend_invite(message, inviter_id, repo)
+
+    else:
+        text = (
+            f'<b>👋 Давай сначала познакомимся!</b>\n\n'
+            f'<b>Чтобы добавлять друзей, нужно создать профиль:</b>\n'
+            f'<blockquote><b>1.</b> Прими соглашение ниже 👇\n'
+            f'<b>2.</b> Пройди регистрацию 📝\n'
+            f'<b>3.</b> Отправь заявку дружбы снова 🤗</blockquote>'
+        )
+        await message.answer(text=text, parse_mode='HTML')
+        await send_user_consent(message, state)
+        await state.set_state(ProfileForm.Consent)
+    
+
+@router.message(CommandStart())
+async def start_cmd(message: types.Message, state: FSMContext, repo: Repository):
+    user_id = message.from_user.id
+    username = message.from_user.username
 
     if repo.users.exists_user(user_id):
         await state.clear()
@@ -48,20 +75,17 @@ async def start_cmd(message: types.Message,
 
         await send_main_menu(message, repo, message.from_user.id)
 
-        if inviter_id:
-            if inviter_id != user_id:
-                await handle_friend_invite(message, inviter_id, repo)
-
     else:
         try:
             await message.delete()
         except Exception:
             pass
 
-        await state.set_data({"inviter_id": inviter_id})
         await send_user_consent(message, state)
         await state.set_state(ProfileForm.Consent)
 
+
+    
 
 
 
